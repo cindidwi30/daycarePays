@@ -79,15 +79,26 @@ const DaftarAnakDenganForm = () => {
     }
   };
 
+  // useEffect(() => {
+  //   if (token) {
+  //     fetchData();
+  //     fetchPaketList(); // tambahkan ini
+  //   } else {
+  //     setErrorAnak("Token tidak ditemukan, silakan login.");
+  //     setLoadingAnak(false);
+  //   }
+  // }, []);
+
   useEffect(() => {
     if (token) {
       fetchData();
-      fetchPaketList(); // tambahkan ini
+      fetchPaketList();
     } else {
       setErrorAnak("Token tidak ditemukan, silakan login.");
       setLoadingAnak(false);
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchData, fetchPaketList, token]);
 
   const onTambahSukses = () => {
     fetchData();

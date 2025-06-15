@@ -41,13 +41,11 @@ const AbsensiAnak = () => {
     };
 
     fetchData();
-  }, []);
+  }, [API_URL]);
 
   const handleHadir = async (childId, name) => {
     try {
-      const res = await axios.post(`${API_URL}/api/absensi/hadir`, {
-        childId,
-      });
+      await axios.post(`${API_URL}/api/absensi/hadir`, { childId });
       alert(`Absensi hadir berhasil untuk ${name}`);
       // Refresh data absensi setelah hadir
       refreshAbsensiHariIni();
@@ -62,7 +60,7 @@ const AbsensiAnak = () => {
 
   const handlePulang = async (childId, name) => {
     try {
-      const res = await axios.post(`${API_URL}/api/absensi/pulang`, {
+      await axios.post(`${API_URL}/api/absensi/pulang`, {
         childId,
       });
       alert(`Absensi pulang berhasil untuk ${name}`);

@@ -5,7 +5,7 @@ import axios from "axios"; // For making HTTP requests
 
 const AdminSummary = () => {
   // State for storing counts
-  const [totalPackages, setTotalPackages] = useState(0);
+  // const [totalPackages, setTotalPackages] = useState(0);
   const [totalParents, setTotalParents] = useState(0);
   const [error, setError] = useState(null);
 
