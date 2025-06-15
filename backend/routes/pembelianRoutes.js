@@ -139,9 +139,10 @@ router.get("/admin/all", authenticateToken, async (req, res) => {
 });
 
 // POST: Generate Duitku payment URL
+// POST: Generate Duitku payment URL
 router.post("/duitku-token", authenticateToken, async (req, res) => {
   const { paketId, childId } = req.body;
-  // validasi
+
   if (!paketId || !childId)
     return res.status(400).json({ error: "paketId & childId diperlukan." });
 
@@ -186,10 +187,12 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
       reference: resp.data.reference,
     });
   } catch (err) {
-    console.error("Duitku error:", err.response?.data || err.message);
-    return res
-      .status(500)
-      .json({ error: "Gagal generate Duitku payment URL." });
+    // ⬇️ GANTI bagian ini dengan kode debug yang lebih lengkap:
+    console.error("Duitku error:", err?.response?.data || err.message);
+    return res.status(500).json({
+      error: "Gagal generate Duitku payment URL.",
+      detail: err?.response?.data || err.message, // Tambahkan detail debug
+    });
   }
 });
 
