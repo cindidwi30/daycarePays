@@ -24,9 +24,12 @@ const FormTambahAnak = () => {
   useEffect(() => {
     const fetchPakets = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/admin/paket", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await axios.get(
+          `${process.env.REACT_APP_API_URL}/api/admin/paket`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
         if (Array.isArray(res.data)) {
           setPaketList(res.data);
@@ -68,7 +71,7 @@ const FormTambahAnak = () => {
     try {
       // Tambah anak
       const res = await axios.post(
-        "http://localhost:5000/api/anak",
+        `${process.env.REACT_APP_API_URL}/api/anak`,
         {
           name: form.name,
           birthDate: form.birthDate,
@@ -91,7 +94,7 @@ const FormTambahAnak = () => {
 
       // Beli paket untuk anak
       await axios.post(
-        "http://localhost:5000/api/pembelian",
+        `${process.env.REACT_APP_API_URL}/api/pembelian`,
         {
           paketId: form.paketId,
           childId: newChildId,

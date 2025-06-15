@@ -14,7 +14,7 @@ const AbsensiAnak = () => {
     const fetchAnak = async () => {
       try {
         const res = await axios.get(
-          "http://localhost:5000/api/pengasuh/anak-aktif"
+          `${process.env.REACT_APP_API_URL}/api/pengasuh/anak-aktif`
         );
         setAnak(res.data);
       } catch (err) {
@@ -29,9 +29,12 @@ const AbsensiAnak = () => {
 
   const handleHadir = async (childId, name) => {
     try {
-      const res = await axios.post("http://localhost:5000/api/absensi/hadir", {
-        childId,
-      });
+      const res = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/absensi/hadir`,
+        {
+          childId,
+        }
+      );
       alert(`Absensi hadir berhasil untuk ${name}`);
       // Optional: reload detail or data if needed
       if (detailData && detailData.absensi.childId === childId) {
@@ -45,9 +48,12 @@ const AbsensiAnak = () => {
 
   const handlePulang = async (childId, name) => {
     try {
-      const res = await axios.post("http://localhost:5000/api/absensi/pulang", {
-        childId,
-      });
+      const res = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/absensi/pulang`,
+        {
+          childId,
+        }
+      );
       alert(`Absensi pulang berhasil untuk ${name}`);
       if (detailData && detailData.absensi.childId === childId) {
         fetchDetail(childId);
@@ -62,7 +68,7 @@ const AbsensiAnak = () => {
     setLoadingDetail(true);
     try {
       const res = await axios.get(
-        `http://localhost:5000/api/absensi/detail/${childId}`
+        `${process.env.REACT_APP_API_URL}/api/absensi/detail/${childId}`
       );
       setDetailData({ ...res.data, childId });
       setShowDetail(true);

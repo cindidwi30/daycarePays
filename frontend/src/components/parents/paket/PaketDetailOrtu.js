@@ -25,7 +25,7 @@ const PaketDetailOrtu = () => {
 
     try {
       await axios.post(
-        "http://localhost:5000/api/pembelian",
+        `${process.env.REACT_APP_API_URL}/api/pembelian`,
         { paketId: paket._id, childId: selectedChild },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -38,7 +38,7 @@ const PaketDetailOrtu = () => {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:5000/api/admin/paket/${id}`)
+      .get(`${process.env.REACT_APP_API_URL}/api/admin/paket/${id}`)
       .then((response) => {
         setPaket(response.data);
       })
@@ -49,7 +49,7 @@ const PaketDetailOrtu = () => {
 
     if (token) {
       axios
-        .get("http://localhost:5000/api/anak", {
+        .get(`${process.env.REACT_APP_API_URL}/api/anak`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then((res) => {

@@ -17,9 +17,12 @@ const DaftarAnakDenganForm = () => {
   const token = localStorage.getItem("token");
   const fetchPaketList = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/admin/paket", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/admin/paket`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setPaketList(res.data);
     } catch (err) {
       console.error("Gagal fetch paket:", err);
@@ -30,16 +33,19 @@ const DaftarAnakDenganForm = () => {
     setLoadingAnak(true);
     try {
       // 1. Fetch data anak
-      const resAnak = await axios.get("http://localhost:5000/api/anak", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const resAnak = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/anak`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       const anakData = Array.isArray(resAnak.data) ? resAnak.data : [];
 
       // 2. Fetch riwayat pembelian orang tua (paket yang aktif)
       const decodedToken = JSON.parse(atob(token.split(".")[1]));
       const userId = decodedToken.id;
       const resPembelian = await axios.get(
-        `http://localhost:5000/api/pembelian/user/${userId}`,
+        `${process.env.REACT_APP_API_URL}/api/pembelian/user/${userId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const riwayatPembelian = Array.isArray(resPembelian.data)
@@ -93,7 +99,7 @@ const DaftarAnakDenganForm = () => {
 
     try {
       await axios.post(
-        "http://localhost:5000/api/pembelian",
+        `${process.env.REACT_APP_API_URL}/api/pembelian`,
         { childId: selectedChild._id, paketId: selectedPaketId },
         { headers: { Authorization: `Bearer ${token}` } }
       );

@@ -14,7 +14,7 @@ const PaketList = () => {
   // Fungsi ambil data paket
   const fetchPakets = () => {
     axios
-      .get("http://localhost:5000/api/admin/paket")
+      .get(`${process.env.REACT_APP_API_URL}/api/admin/paket`)
       .then((response) => {
         setPaketList(response.data);
         setError(null);
@@ -30,7 +30,9 @@ const PaketList = () => {
     if (!window.confirm("Yakin ingin menghapus paket ini?")) return;
 
     try {
-      await axios.delete(`http://localhost:5000/api/admin/paket/${id}`);
+      await axios.delete(
+        `${process.env.REACT_APP_API_URL}/api/admin/paket/${id}`
+      );
       // Setelah berhasil delete, refresh list paket
       setPaketList(paketList.filter((paket) => paket._id !== id));
     } catch (err) {

@@ -1,127 +1,3 @@
-// import React, { useEffect, useState } from "react";
-// import { useParams, Link } from "react-router-dom";
-// import axios from "axios";
-// import { Card, Button } from "react-bootstrap";
-
-// const PaketDetail = () => {
-//   const { id } = useParams(); // Ambil ID dari URL
-//   const [paket, setPaket] = useState(null);
-//   const [error, setError] = useState(null);
-
-//   useEffect(() => {
-//     axios
-//       .get(`http://localhost:5000/api/admin/paket/${id}`)
-//       .then((response) => {
-//         setPaket(response.data);
-//       })
-//       .catch((err) => {
-//         setError("Gagal mengambil detail paket");
-//         console.error(err);
-//       });
-//   }, [id]);
-
-//   if (error) return <div className="container mt-4 text-danger">{error}</div>;
-//   if (!paket) return <div className="container mt-4">Memuat...</div>;
-
-//   return (
-//     <div className="container mt-4">
-//       <h3>Detail Paket</h3>
-//       <Card className="p-4">
-//         <p>
-//           <strong>Nama Paket:</strong> {paket.name}
-//         </p>
-//         <p>
-//           <strong>Deskripsi:</strong> {paket.description}
-//         </p>
-//         <p>
-//           <strong>Harga:</strong> Rp{paket.price}
-//         </p>
-//         <p>
-//           <strong>Durasi:</strong> {paket.duration}
-//         </p>
-//         <p>
-//           <strong>Tarif Denda / Menit:</strong> Rp{paket.lateFeePerMinute}
-//         </p>
-//         <p>
-//           <strong>Batas Maks Denda / Hari:</strong> Rp{paket.maxLateFeePerDay}
-//         </p>
-//         <p>
-//           <strong>Masa Tenggang:</strong> {paket.gracePeriod} menit
-//         </p>
-//         <Link to="/dashboard/admin/paket">
-//           <Button variant="secondary" className="mt-3">
-//             Kembali
-//           </Button>
-//         </Link>
-//       </Card>
-//     </div>
-//   );
-// };
-
-// export default PaketDetail;
-
-// import React, { useEffect, useState } from "react";
-// import { useParams, Link } from "react-router-dom";
-// import axios from "axios";
-// import { Card, Button } from "react-bootstrap";
-
-// const PaketDetail = () => {
-//   const { id } = useParams();
-//   const [paket, setPaket] = useState(null);
-//   const [error, setError] = useState(null);
-
-//   useEffect(() => {
-//     axios
-//       .get(`http://localhost:5000/api/admin/paket/${id}`)
-//       .then((response) => {
-//         setPaket(response.data);
-//       })
-//       .catch((err) => {
-//         setError("Gagal mengambil detail paket");
-//         console.error(err);
-//       });
-//   }, [id]);
-
-//   if (error) return <div className="container mt-4 text-danger">{error}</div>;
-//   if (!paket) return <div className="container mt-4">Memuat...</div>;
-
-//   return (
-//     <div className="container mt-4">
-//       <h3>Detail Paket</h3>
-//       <Card className="p-4">
-//         <p>
-//           <strong>Nama Paket:</strong> {paket.name}
-//         </p>
-//         <p>
-//           <strong>Deskripsi:</strong> {paket.description}
-//         </p>
-//         <p>
-//           <strong>Harga:</strong> Rp{paket.price}
-//         </p>
-//         <p>
-//           <strong>Durasi:</strong> {paket.duration}
-//         </p>
-//         <p>
-//           <strong>Tarif Denda / Menit:</strong> Rp{paket.lateFeePerMinute}
-//         </p>
-//         <p>
-//           <strong>Batas Maks Denda / Hari:</strong> Rp{paket.maxLateFeePerDay}
-//         </p>
-//         <p>
-//           <strong>Masa Tenggang:</strong> {paket.gracePeriod} menit
-//         </p>
-//         <Link to="/dashboard/admin/paket-list">
-//           <Button variant="secondary" className="mt-3">
-//             Kembali
-//           </Button>
-//         </Link>
-//       </Card>
-//     </div>
-//   );
-// };
-
-// export default PaketDetail;
-
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -135,7 +11,7 @@ const PaketDetail = () => {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:5000/api/admin/paket/${id}`)
+      .get(`${process.env.REACT_APP_API_URL}/api/admin/paket/${id}`)
       .then((response) => {
         setPaket(response.data);
       })
@@ -148,7 +24,7 @@ const PaketDetail = () => {
   const handleDelete = () => {
     if (window.confirm("Apakah kamu yakin ingin menghapus paket ini?")) {
       axios
-        .delete(`http://localhost:5000/api/admin/paket/${id}`)
+        .delete(`${process.env.REACT_APP_API_URL}/api/admin/paket/${id}`)
         .then(() => {
           alert("Paket berhasil dihapus");
           navigate("/dashboard/admin/paket-list"); // Kembali ke list setelah hapus

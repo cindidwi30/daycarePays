@@ -208,7 +208,7 @@ const RiwayatPembelianOrtu = () => {
         const userId = decodedToken.id;
 
         const response = await axios.get(
-          `http://localhost:5000/api/pembelian/user/${userId}`,
+          `${process.env.REACT_APP_API_URL}/api/pembelian/user/${userId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }

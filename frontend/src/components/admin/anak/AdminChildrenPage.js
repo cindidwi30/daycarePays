@@ -10,9 +10,12 @@ const AdminChildrenPage = () => {
   const fetchChildren = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get("http://localhost:5000/api/anak/all", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/anak/all`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setChildren(response.data);
     } catch (err) {
       console.error("Gagal mengambil data anak:", err);
@@ -27,7 +30,7 @@ const AdminChildrenPage = () => {
 
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/api/anak/${id}`, {
+      await axios.delete(`${process.env.REACT_APP_API_URL}/api/anak/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setChildren((prev) => prev.filter((child) => child._id !== id));

@@ -10,7 +10,7 @@ const Summary = () => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/admin/paket")
+      .get(`${process.env.REACT_APP_API_URL}/api/admin/paket`)
       .then((response) => {
         setPaketList(response.data);
       })

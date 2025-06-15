@@ -20,12 +20,12 @@ const JadwalDaycareHariIni = () => {
 
         const [jadwalRes, absensiRes] = await Promise.all([
           axios.get(
-            `http://localhost:5000/api/pembelian/jadwal-hari-ini/${userId}`,
+            `${process.env.REACT_APP_API_URL}/api/pembelian/jadwal-hari-ini/${userId}`,
             {
               headers: { Authorization: `Bearer ${token}` },
             }
           ),
-          axios.get(`http://localhost:5000/api/absensi`, {
+          axios.get(`${process.env.REACT_APP_API_URL}/api/absensi`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
         ]);
