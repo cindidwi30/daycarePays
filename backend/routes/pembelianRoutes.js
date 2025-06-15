@@ -139,7 +139,6 @@ router.get("/admin/all", authenticateToken, async (req, res) => {
 });
 
 // POST: Generate Duitku payment URL
-// POST: Generate Duitku payment URL
 router.post("/duitku-token", authenticateToken, async (req, res) => {
   const { paketId, childId } = req.body;
 
@@ -155,13 +154,13 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
 
     const merchantCode = process.env.DUITKU_MERCHANT_CODE;
     const merchantKey = process.env.DUITKU_API_KEY;
-    const paymentAmount = paket.price;
+    const paymentAmount = Math.round(paket.price); // pastikan integer
     const orderId = "INV-" + Date.now();
     const productDetails = paket.name;
 
     const signature = crypto
       .createHash("sha256")
-      .update(merchantCode + orderId + paymentAmount + merchantKey)
+      .update(merchantCode + paymentAmount + merchantKey) // ✅ TANPA orderId
       .digest("hex");
 
     const payload = {
@@ -176,6 +175,8 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
       signature,
     };
 
+    console.log("Payload Duitku:", payload); // ✅ optional debug
+
     const resp = await axios.post(
       "https://sandbox.duitku.com/webapi/api/merchant/v2/inquiry",
       payload,
@@ -187,11 +188,10 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
       reference: resp.data.reference,
     });
   } catch (err) {
-    // ⬇️ GANTI bagian ini dengan kode debug yang lebih lengkap:
     console.error("Duitku error:", err?.response?.data || err.message);
     return res.status(500).json({
       error: "Gagal generate Duitku payment URL.",
-      detail: err?.response?.data || err.message, // Tambahkan detail debug
+      detail: err?.response?.data || err.message,
     });
   }
 });
