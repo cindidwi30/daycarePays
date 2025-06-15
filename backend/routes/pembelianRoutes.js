@@ -170,6 +170,7 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
     console.log("Computed signature:", signature);
     console.log("Merchant Code:", merchantCode);
     console.log("Merchant Key:", merchantKey);
+    console.log("typeof paket.price:", typeof paket.price); // Harus 'number' atau 'string' berisi angka
     console.log("=========================");
 
     const payload = {
@@ -177,8 +178,8 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
       paymentAmount,
       merchantOrderId: orderId,
       productDetails,
-      email: user.email,
-      phoneNumber: anak.parentPhone || "081234567890",
+      email: "tes@email.com", // untuk debug
+      phoneNumber: "081234567890", // untuk debug
       returnUrl,
       callbackUrl,
       signature,
