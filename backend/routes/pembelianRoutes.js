@@ -157,7 +157,8 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
     const productDetails = paket.name;
 
     // 🔍 Tambahkan log untuk debug
-    const rawSignature = merchantCode + paymentAmount + merchantKey;
+    const rawSignature = merchantCode + orderId + paymentAmount + merchantKey;
+
     const signature = crypto
       .createHash("sha256")
       .update(rawSignature)
