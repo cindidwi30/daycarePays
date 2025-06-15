@@ -97,32 +97,31 @@ const DaftarAnakDenganForm = () => {
       setErrorAnak("Token tidak ditemukan, silakan login.");
       setLoadingAnak(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchData, fetchPaketList, token]);
+  }, []); // ✅ kosong = hanya sekali jalan
 
   const onTambahSukses = () => {
     fetchData();
     setShowForm(false);
   };
 
-  const handlePembelianBaru = async () => {
-    if (!selectedChild || !selectedPaketId) return;
+  // const handlePembelianBaru = async () => {
+  //   if (!selectedChild || !selectedPaketId) return;
 
-    try {
-      await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/pembelian`,
-        { childId: selectedChild._id, paketId: selectedPaketId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      alert("Pembelian berhasil!");
-      setSelectedChild(null);
-      setSelectedPaketId("");
-      fetchData();
-    } catch (err) {
-      console.error("Gagal melakukan pembelian:", err);
-      alert("Gagal melakukan pembelian.");
-    }
-  };
+  //   try {
+  //     await axios.post(
+  //       `${process.env.REACT_APP_API_URL}/api/pembelian`,
+  //       { childId: selectedChild._id, paketId: selectedPaketId },
+  //       { headers: { Authorization: `Bearer ${token}` } }
+  //     );
+  //     alert("Pembelian berhasil!");
+  //     setSelectedChild(null);
+  //     setSelectedPaketId("");
+  //     fetchData();
+  //   } catch (err) {
+  //     console.error("Gagal melakukan pembelian:", err);
+  //     alert("Gagal melakukan pembelian.");
+  //   }
+  // };
   // const handlePembelianBaru = async () => {
   //   if (!selectedChild || !selectedPaketId) return;
 
@@ -162,6 +161,33 @@ const DaftarAnakDenganForm = () => {
   //     alert("Gagal memulai pembayaran.");
   //   }
   // };
+  const handlePembelianBaru = async () => {
+    if (!selectedChild || !selectedPaketId) return;
+
+    try {
+      const res = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/pembelian/duitku-token`,
+        {
+          childId: selectedChild._id,
+          paketId: selectedPaketId,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      const { paymentUrl } = res.data;
+
+      // Arahkan user ke Duitku payment URL
+      window.location.href = paymentUrl;
+    } catch (err) {
+      console.error(
+        "Gagal memulai pembayaran Duitku:",
+        err.response?.data || err
+      );
+      alert("Gagal memulai pembayaran.");
+    }
+  };
 
   const toggleDetail = (id) => {
     setExpandedId(expandedId === id ? null : id);
