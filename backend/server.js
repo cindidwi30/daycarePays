@@ -20,7 +20,26 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://192.168.0.102:3000",
+  "https://daycarepays-frontend.up.railway.app", // ganti sesuai domain Railway frontend kamu
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Kalau request tanpa origin (misal dari Postman), izinkan
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Tidak diizinkan oleh CORS"));
+      }
+    },
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 
 // MongoDB Connection
@@ -36,6 +55,24 @@ mongoose
 app.get("/", (req, res) => {
   res.send("🟢 API is running...");
 });
+
+// app.get("/test-db", async (req, res) => {
+//   try {
+//     const result = await User.findOne(); // cuma ambil 1 data dari koleksi Anak
+//     res.json({
+//       connected: true,
+//       message: "Berhasil terhubung ke database MongoDB",
+//       sampleData: result,
+//     });
+//   } catch (error) {
+//     console.error("❌ Gagal konek MongoDB:", error);
+//     res.status(500).json({
+//       connected: false,
+//       message: "Gagal terhubung ke database",
+//       error: error.message,
+//     });
+//   }
+// });
 
 app.use("/api/auth", authRoutes);
 app.use("/api/biodata", biodataRoutes); // Ubah path jadi lebih spesifik
