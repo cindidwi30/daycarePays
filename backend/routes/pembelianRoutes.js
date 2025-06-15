@@ -147,17 +147,22 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
     if (!paket || !user || !anak)
       return res.status(404).json({ error: "Data tidak ditemukan." });
 
-    // Pastikan env vars tidak ada whitespace
+    // Pastikan env vars tidak kosong dan bersih dari whitespace
     const merchantCode = process.env.DUITKU_MERCHANT_CODE?.trim();
     const merchantKey = process.env.DUITKU_API_KEY?.trim();
     const returnUrl = process.env.DUITKU_RETURN_URL?.trim();
     const callbackUrl = process.env.DUITKU_CALLBACK_URL?.trim();
 
-    const paymentAmount = Math.round(Number(paket.price));
+    if (!merchantCode || !merchantKey || !returnUrl || !callbackUrl) {
+      return res
+        .status(500)
+        .json({ error: "Konfigurasi Duitku tidak lengkap." });
+    }
+
+    const paymentAmount = Math.round(Number(paket.price)).toString(); // pastikan string!
     const orderId = "INV-" + Date.now();
     const productDetails = paket.name;
 
-    // Perbaikan SIGNATURE SESUAI DOKUMENTASI DUITKU
     const rawSignature = merchantCode + orderId + paymentAmount + merchantKey;
     const signature = crypto
       .createHash("sha256")
@@ -167,7 +172,7 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
     // Debug
     console.log("==== DEBUG SIGNATURE ====");
     console.log("paket.price (original):", paket.price);
-    console.log("paymentAmount (rounded):", paymentAmount);
+    console.log("paymentAmount (string):", paymentAmount);
     console.log("Raw string:", rawSignature);
     console.log("Computed signature:", signature);
     console.log("Merchant Code:", merchantCode);
