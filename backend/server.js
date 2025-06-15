@@ -23,7 +23,9 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:3000",
   "http://192.168.0.102:3000",
-  "https://daycarepays-frontend.up.railway.app", // ganti sesuai domain Railway frontend kamu
+  "http://192.168.0.102:8080", // ⬅️ Tambahkan ini
+  "http://localhost:8080", // ⬅️ (opsional, untuk jaga-jaga)
+  "https://daycarepays-frontend.up.railway.app",
 ];
 
 app.use(
