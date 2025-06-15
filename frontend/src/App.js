@@ -69,6 +69,10 @@ function App() {
 
   return (
     <Routes>
+      {/* Redirect root ke login */}
+      <Route path="/" element={<Navigate to="/login" replace />} />
+
+      {/* Login route (cukup satu saja) */}
       <Route
         path="/login"
         element={
@@ -79,6 +83,8 @@ function App() {
           )
         }
       />
+
+      {/* Register route */}
       <Route
         path="/register"
         element={
