@@ -7,9 +7,10 @@ const { isPaketActive } = require("../utils/paketHelper");
 const jwt = require("jsonwebtoken");
 const Paket = require("../models/Paket");
 const User = require("../models/User");
-const Anak = require("../models/Child"); // atau sesuaikan jika file-nya bernama "Anak.js"
+const Anak = require("../models/Child");
 const axios = require("axios");
 const crypto = require("crypto");
+const moment = require("moment");
 
 // Middleware verifikasi token
 function authenticateToken(req, res, next) {
@@ -24,21 +25,16 @@ function authenticateToken(req, res, next) {
   });
 }
 
-// ✅ POST: Membuat pembelian baru
+// POST: Buat pembelian
 router.post("/", authenticateToken, async (req, res) => {
   const { paketId, childId } = req.body;
   const userId = req.user.id;
 
-  if (!childId) {
+  if (!childId)
     return res.status(400).json({ error: "ChildId wajib disertakan." });
-  }
 
   try {
-    const pembelian = new Pembelian({
-      userId,
-      paketId,
-      childId,
-    });
+    const pembelian = new Pembelian({ userId, paketId, childId });
     await pembelian.save();
     res.status(201).json(pembelian);
   } catch (err) {
@@ -47,7 +43,7 @@ router.post("/", authenticateToken, async (req, res) => {
   }
 });
 
-// ✅ GET: Ambil riwayat pembelian + status aktif
+// GET: Riwayat pembelian user
 router.get("/user/:userId", authenticateToken, async (req, res) => {
   try {
     const pembelian = await Pembelian.find({ userId: req.params.userId })
@@ -66,9 +62,7 @@ router.get("/user/:userId", authenticateToken, async (req, res) => {
   }
 });
 
-const moment = require("moment"); // npm install moment
-
-// GET: Jadwal daycare anak aktif hari ini untuk parent tertentu
+// GET: Jadwal hari ini
 router.get("/jadwal-hari-ini/:userId", authenticateToken, async (req, res) => {
   try {
     const { userId } = req.params;
@@ -78,7 +72,6 @@ router.get("/jadwal-hari-ini/:userId", authenticateToken, async (req, res) => {
       .populate("paketId")
       .populate("childId");
 
-    // Filter paket yang masih aktif hari ini
     const jadwalHariIni = pembelian
       .filter((p) => {
         if (!p.paketId || !p.tanggalPembelian) return false;
@@ -110,7 +103,7 @@ router.get("/jadwal-hari-ini/:userId", authenticateToken, async (req, res) => {
   }
 });
 
-// ✅ GET: Admin - semua pembelian, bisa difilter by userId (parent)
+// GET: Admin - semua pembelian
 router.get("/admin/all", authenticateToken, async (req, res) => {
   const { userId } = req.query;
 
@@ -120,7 +113,7 @@ router.get("/admin/all", authenticateToken, async (req, res) => {
     const pembelian = await Pembelian.find(filter)
       .populate("paketId")
       .populate("childId")
-      .populate("userId", "name email"); // untuk menampilkan nama/email orang tua
+      .populate("userId", "name email");
 
     const hasil = pembelian.map((p) => ({
       _id: p._id,
@@ -149,18 +142,28 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
     const paket = await Paket.findById(paketId);
     const user = await User.findById(req.user.id);
     const anak = await Anak.findById(childId);
+
     if (!paket || !user || !anak)
       return res.status(404).json({ error: "Data tidak ditemukan." });
 
     const merchantCode = process.env.DUITKU_MERCHANT_CODE;
     const merchantKey = process.env.DUITKU_API_KEY;
-    const paymentAmount = Math.round(paket.price); // pastikan integer
+    const returnUrl = process.env.DUITKU_RETURN_URL;
+    const callbackUrl = process.env.DUITKU_CALLBACK_URL;
+
+    const paymentAmount = Math.round(paket.price);
     const orderId = "INV-" + Date.now();
     const productDetails = paket.name;
 
+    // Debug log (hapus saat production)
+    console.log("Debug Signature Params:");
+    console.log("merchantCode:", merchantCode);
+    console.log("paymentAmount:", paymentAmount);
+    console.log("merchantKey:", merchantKey);
+
     const signature = crypto
       .createHash("sha256")
-      .update(merchantCode + paymentAmount + merchantKey) // ✅ TANPA orderId
+      .update(merchantCode + paymentAmount + merchantKey)
       .digest("hex");
 
     const payload = {
@@ -170,12 +173,10 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
       productDetails,
       email: user.email,
       phoneNumber: anak.parentPhone || "081234567890",
-      returnUrl: process.env.DUITKU_RETURN_URL,
-      callbackUrl: process.env.DUITKU_CALLBACK_URL,
+      returnUrl,
+      callbackUrl,
       signature,
     };
-
-    console.log("Payload Duitku:", payload); // ✅ optional debug
 
     const resp = await axios.post(
       "https://sandbox.duitku.com/webapi/api/merchant/v2/inquiry",
@@ -196,9 +197,8 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
   }
 });
 
-// POST: Callback Duitku payment
+// POST: Callback dari Duitku
 router.post("/callback-duitku", async (req, res) => {
-  // cek req.body untuk status pembayaran dan update DB
   console.log("Callback Duitku:", req.body);
   res.sendStatus(200);
 });
