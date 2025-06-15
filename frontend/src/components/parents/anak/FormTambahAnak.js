@@ -126,6 +126,62 @@ const FormTambahAnak = () => {
     }
   };
 
+  const handleBayarDuitku = async (e) => {
+    e.preventDefault();
+
+    // Validasi dasar
+    if (!form.name || !form.birthDate || !form.gender || !form.paketId) {
+      alert("Nama, tanggal lahir, gender, dan paket wajib diisi.");
+      return;
+    }
+
+    if (new Date(form.birthDate) > new Date()) {
+      alert("Tanggal lahir tidak boleh di masa depan");
+      return;
+    }
+
+    try {
+      // Step 1: tambah anak
+      const anakRes = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/anak`,
+        {
+          name: form.name,
+          birthDate: form.birthDate,
+          gender: form.gender,
+          placeOfBirth: form.placeOfBirth,
+          bloodType: form.bloodType,
+          allergy: form.allergy,
+          address: form.address,
+          parentPhone: form.parentPhone,
+          emergencyContact: form.emergencyContact,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      const newChildId = anakRes.data._id;
+
+      // Step 2: generate Duitku payment URL
+      const bayarRes = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/pembelian/duitku-token`,
+        {
+          paketId: form.paketId,
+          childId: newChildId,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      // Redirect ke halaman pembayaran Duitku
+      window.location.href = bayarRes.data.paymentUrl;
+    } catch (err) {
+      console.error("Error saat mendaftarkan & bayar:", err);
+      alert("Gagal menambahkan anak atau mendapatkan payment URL");
+    }
+  };
+
   return (
     <div className="container mt-4">
       <h3>Tambah Profil Anak</h3>
@@ -274,8 +330,12 @@ const FormTambahAnak = () => {
           )}
         </div>
 
-        <button type="submit" className="btn btn-primary" disabled={loading}>
-          Simpan
+        <button
+          type="button"
+          onClick={handleBayarDuitku}
+          className="btn btn-success"
+        >
+          Bayar dan Daftarkan Anak
         </button>
       </form>
     </div>
