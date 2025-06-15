@@ -185,7 +185,7 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
     };
 
     const resp = await axios.post(
-      "https://sandbox.duitku.com/webapi/api/merchant/v2/inquiry",
+      "https://sandbox.duitku.com/webapi/api/merchant/v1/inquiry",
       payload,
       { headers: { "Content-Type": "application/json" } }
     );
