@@ -173,7 +173,6 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
     console.log("=========================");
 
     const payload = {
-      merchantCode,
       paymentAmount,
       merchantOrderId: orderId,
       productDetails,
@@ -181,11 +180,13 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
       phoneNumber: user.phone || "081234567890",
       returnUrl,
       callbackUrl,
+      merchantCode,
       signature,
+      expiryPeriod: 60, // menit
     };
 
-    const resp = await axios.post(
-      "https://sandbox.duitku.com/webapi/api/merchant/v1/inquiry",
+    await axios.post(
+      "https://sandbox.duitku.com/webapi/api/merchant/paymentmethod/getmerchantpaymenturl",
       payload,
       { headers: { "Content-Type": "application/json" } }
     );
