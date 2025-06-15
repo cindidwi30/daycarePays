@@ -132,6 +132,7 @@ router.get("/admin/all", authenticateToken, async (req, res) => {
 });
 
 // POST: Generate Duitku payment URL
+// POST: Generate Duitku payment URL
 router.post("/duitku-token", authenticateToken, async (req, res) => {
   const { paketId, childId } = req.body;
 
@@ -151,20 +152,25 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
     const returnUrl = process.env.DUITKU_RETURN_URL;
     const callbackUrl = process.env.DUITKU_CALLBACK_URL;
 
-    const paymentAmount = Math.round(paket.price);
+    const paymentAmount = Math.round(Number(paket.price)); // Pastikan aman
     const orderId = "INV-" + Date.now();
     const productDetails = paket.name;
 
-    // Debug log (hapus saat production)
-    console.log("Debug Signature Params:");
-    console.log("merchantCode:", merchantCode);
-    console.log("paymentAmount:", paymentAmount);
-    console.log("merchantKey:", merchantKey);
-
+    // 🔍 Tambahkan log untuk debug
+    const rawSignature = merchantCode + paymentAmount + merchantKey;
     const signature = crypto
       .createHash("sha256")
-      .update(merchantCode + paymentAmount + merchantKey)
+      .update(rawSignature)
       .digest("hex");
+
+    console.log("==== DEBUG SIGNATURE ====");
+    console.log("paket.price (original):", paket.price);
+    console.log("paymentAmount (rounded):", paymentAmount);
+    console.log("Raw string:", rawSignature);
+    console.log("Computed signature:", signature);
+    console.log("Merchant Code:", merchantCode);
+    console.log("Merchant Key:", merchantKey);
+    console.log("=========================");
 
     const payload = {
       merchantCode,
