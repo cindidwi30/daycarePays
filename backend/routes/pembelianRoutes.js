@@ -147,23 +147,24 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
     if (!paket || !user || !anak)
       return res.status(404).json({ error: "Data tidak ditemukan." });
 
-    const merchantCode = process.env.DUITKU_MERCHANT_CODE;
-    const merchantKey = process.env.DUITKU_API_KEY;
-    const returnUrl = process.env.DUITKU_RETURN_URL;
-    const callbackUrl = process.env.DUITKU_CALLBACK_URL;
+    // Pastikan env vars tidak ada whitespace
+    const merchantCode = process.env.DUITKU_MERCHANT_CODE?.trim();
+    const merchantKey = process.env.DUITKU_API_KEY?.trim();
+    const returnUrl = process.env.DUITKU_RETURN_URL?.trim();
+    const callbackUrl = process.env.DUITKU_CALLBACK_URL?.trim();
 
-    const paymentAmount = Math.round(Number(paket.price)); // Pastikan aman
+    const paymentAmount = Math.round(Number(paket.price));
     const orderId = "INV-" + Date.now();
     const productDetails = paket.name;
 
-    // 🔍 Tambahkan log untuk debug
+    // Perbaikan SIGNATURE SESUAI DOKUMENTASI DUITKU
     const rawSignature = merchantCode + orderId + paymentAmount + merchantKey;
-
     const signature = crypto
       .createHash("sha256")
       .update(rawSignature)
       .digest("hex");
 
+    // Debug
     console.log("==== DEBUG SIGNATURE ====");
     console.log("paket.price (original):", paket.price);
     console.log("paymentAmount (rounded):", paymentAmount);
@@ -171,7 +172,7 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
     console.log("Computed signature:", signature);
     console.log("Merchant Code:", merchantCode);
     console.log("Merchant Key:", merchantKey);
-    console.log("typeof paket.price:", typeof paket.price); // Harus 'number' atau 'string' berisi angka
+    console.log("Order ID:", orderId);
     console.log("=========================");
 
     const payload = {
@@ -179,8 +180,8 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
       paymentAmount,
       merchantOrderId: orderId,
       productDetails,
-      email: "tes@email.com", // untuk debug
-      phoneNumber: "081234567890", // untuk debug
+      email: user.email || "tes@email.com",
+      phoneNumber: user.phone || "081234567890",
       returnUrl,
       callbackUrl,
       signature,
