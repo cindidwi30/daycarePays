@@ -8,6 +8,8 @@ const jwt = require("jsonwebtoken");
 const Paket = require("../models/Paket");
 const User = require("../models/User");
 const Anak = require("../models/Child"); // atau sesuaikan jika file-nya bernama "Anak.js"
+const axios = require("axios");
+const crypto = require("crypto");
 
 // Middleware verifikasi token
 function authenticateToken(req, res, next) {
@@ -136,96 +138,66 @@ router.get("/admin/all", authenticateToken, async (req, res) => {
   }
 });
 
-// POST: Generate Snap Token Midtrans
-// const midtransClient = require("midtrans-client");
-
-// router.post("/midtrans-token", authenticateToken, async (req, res) => {
-//   const { paketId, childId } = req.body;
-//   const userId = req.user.id;
-
-//   if (!paketId || !childId) {
-//     return res.status(400).json({ error: "PaketId dan ChildId wajib." });
-//   }
-
-//   try {
-//     const { name: paketName, price } = await Paket.findById(paketId);
-//     const user = await User.findById(userId); // Assuming User model available
-//     const anak = await Anak.findById(childId);
-
-//     if (!paketName || !price || !user || !anak) {
-//       return res.status(404).json({ error: "Data tidak ditemukan." });
-//     }
-
-//     const snap = new midtransClient.Snap({
-//       isProduction: false,
-//       serverKey: process.env.MIDTRANS_SERVER_KEY,
-//     });
-
-//     const parameter = {
-//       transaction_details: {
-//         order_id: `ORDER-${Date.now()}`,
-//         gross_amount: price,
-//       },
-//       customer_details: {
-//         first_name: user.name,
-//         email: user.email,
-//         phone: anak.parentPhone || "081234567890",
-//       },
-//     };
-
-//     const snapResponse = await snap.createTransaction(parameter);
-//     res.json({ token: snapResponse.token });
-//   } catch (err) {
-//     console.error("Midtrans Snap Token error:", err);
-//     res.status(500).json({ error: "Gagal membuat token Midtrans." });
-//   }
-// });
-
-// POST: Generate Snap Token Midtrans
-const midtransClient = require("midtrans-client");
-
-router.post("/midtrans-token", authenticateToken, async (req, res) => {
+// POST: Generate Duitku payment URL
+router.post("/duitku-token", authenticateToken, async (req, res) => {
   const { paketId, childId } = req.body;
-  const userId = req.user.id;
-
-  if (!paketId || !childId) {
-    return res.status(400).json({ error: "PaketId dan ChildId wajib." });
-  }
+  // validasi
+  if (!paketId || !childId)
+    return res.status(400).json({ error: "paketId & childId diperlukan." });
 
   try {
     const paket = await Paket.findById(paketId);
-    const user = await User.findById(userId);
+    const user = await User.findById(req.user.id);
     const anak = await Anak.findById(childId);
+    if (!paket || !user || !anak)
+      return res.status(404).json({ error: "Data tidak ditemukan." });
 
-    if (!paket || !user || !anak) {
-      return res
-        .status(404)
-        .json({ error: "Data paket, user, atau anak tidak ditemukan." });
-    }
+    const merchantCode = process.env.DUITKU_MERCHANT_CODE;
+    const merchantKey = process.env.DUITKU_API_KEY;
+    const paymentAmount = paket.price;
+    const orderId = "INV-" + Date.now();
+    const productDetails = paket.name;
 
-    const snap = new midtransClient.Snap({
-      isProduction: false,
-      serverKey: process.env.MIDTRANS_SERVER_KEY,
-    });
+    const signature = crypto
+      .createHash("sha256")
+      .update(merchantCode + orderId + paymentAmount + merchantKey)
+      .digest("hex");
 
-    const parameter = {
-      transaction_details: {
-        order_id: `ORDER-${Date.now()}`,
-        gross_amount: paket.price,
-      },
-      customer_details: {
-        first_name: user.name,
-        email: user.email,
-        phone: anak.parentPhone || "081234567890",
-      },
+    const payload = {
+      merchantCode,
+      paymentAmount,
+      merchantOrderId: orderId,
+      productDetails,
+      email: user.email,
+      phoneNumber: anak.parentPhone || "081234567890",
+      returnUrl: process.env.DUITKU_RETURN_URL,
+      callbackUrl: process.env.DUITKU_CALLBACK_URL,
+      signature,
     };
 
-    const snapResponse = await snap.createTransaction(parameter);
-    res.json({ token: snapResponse.token });
+    const resp = await axios.post(
+      "https://sandbox.duitku.com/webapi/api/merchant/v2/inquiry",
+      payload,
+      { headers: { "Content-Type": "application/json" } }
+    );
+
+    return res.json({
+      paymentUrl: resp.data.paymentUrl,
+      reference: resp.data.reference,
+    });
   } catch (err) {
-    console.error("Midtrans Snap Token error:", err);
-    res.status(500).json({ error: "Gagal membuat token Midtrans." });
+    console.error("Duitku error:", err.response?.data || err.message);
+    return res
+      .status(500)
+      .json({ error: "Gagal generate Duitku payment URL." });
   }
+});
+
+// POST: Callback Duitku payment
+router.post("/callback-duitku", async (req, res) => {
+  // cek req.body untuk status pembayaran dan update DB
+  console.log("Callback Duitku:", req.body);
+  res.sendStatus(200);
 });
 
 module.exports = router;
