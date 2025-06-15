@@ -177,9 +177,16 @@ const FormTambahAnak = () => {
       // Redirect ke halaman pembayaran Duitku
       window.location.href = bayarRes.data.paymentUrl;
     } catch (err) {
-      console.error("Error saat mendaftarkan & bayar:", err);
-      alert("Gagal menambahkan anak atau mendapatkan payment URL");
+      const detail = err?.response?.data?.detail || err.message;
+
+      console.error("Error saat mendaftarkan & bayar:", detail);
+      alert("Gagal menambahkan anak atau mendapatkan payment URL: " + detail);
     }
+
+    // console.error(
+    //   "Error saat mendaftarkan & bayar:",
+    //   err.response?.data || err.message
+    // );
   };
 
   return (
