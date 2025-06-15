@@ -132,7 +132,6 @@ router.get("/admin/all", authenticateToken, async (req, res) => {
 });
 
 // POST: Generate Duitku payment URL
-// POST: Generate Duitku payment URL
 router.post("/duitku-token", authenticateToken, async (req, res) => {
   const { paketId, childId } = req.body;
 
@@ -147,19 +146,13 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
     if (!paket || !user || !anak)
       return res.status(404).json({ error: "Data tidak ditemukan." });
 
-    // Pastikan env vars tidak kosong dan bersih dari whitespace
-    const merchantCode = process.env.DUITKU_MERCHANT_CODE?.trim();
-    const merchantKey = process.env.DUITKU_API_KEY?.trim();
+    // HARDCODE SEMENTARA
+    const merchantCode = "DS23357";
+    const merchantKey = "b8112db3b7b3018909665205141c1ae8";
     const returnUrl = process.env.DUITKU_RETURN_URL?.trim();
     const callbackUrl = process.env.DUITKU_CALLBACK_URL?.trim();
 
-    if (!merchantCode || !merchantKey || !returnUrl || !callbackUrl) {
-      return res
-        .status(500)
-        .json({ error: "Konfigurasi Duitku tidak lengkap." });
-    }
-
-    const paymentAmount = Math.round(Number(paket.price)).toString(); // pastikan string!
+    const paymentAmount = Math.round(Number(paket.price));
     const orderId = "INV-" + Date.now();
     const productDetails = paket.name;
 
@@ -169,7 +162,6 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
       .update(rawSignature)
       .digest("hex");
 
-    // Debug
     console.log("==== DEBUG SIGNATURE ====");
     console.log("paket.price (original):", paket.price);
     console.log("paymentAmount (string):", paymentAmount);
