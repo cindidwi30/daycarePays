@@ -22,6 +22,7 @@ const FormTambahAnak = () => {
   const token = localStorage.getItem("token");
 
   useEffect(() => {
+    console.log("Token dari localStorage:", token);
     const fetchPakets = async () => {
       try {
         const res = await axios.get(
