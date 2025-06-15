@@ -162,17 +162,8 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
       .update(rawSignature)
       .digest("hex");
 
-    console.log("==== DEBUG SIGNATURE ====");
-    console.log("paket.price (original):", paket.price);
-    console.log("paymentAmount (string):", paymentAmount);
-    console.log("Raw string:", rawSignature);
-    console.log("Computed signature:", signature);
-    console.log("Merchant Code:", merchantCode);
-    console.log("Merchant Key:", merchantKey);
-    console.log("Order ID:", orderId);
-    console.log("=========================");
-
     const payload = {
+      merchantCode,
       paymentAmount,
       merchantOrderId: orderId,
       productDetails,
@@ -180,13 +171,12 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
       phoneNumber: user.phone || "081234567890",
       returnUrl,
       callbackUrl,
-      merchantCode,
       signature,
       expiryPeriod: 60, // menit
     };
 
-    await axios.post(
-      "https://sandbox.duitku.com/webapi/api/merchant/paymentmethod/getmerchantpaymenturl",
+    const resp = await axios.post(
+      "https://sandbox.duitku.com/webapi/api/merchant/v2/paymentmethod/getpaymenturl",
       payload,
       { headers: { "Content-Type": "application/json" } }
     );
