@@ -132,6 +132,7 @@ router.get("/admin/all", authenticateToken, async (req, res) => {
 });
 
 // POST: Generate Duitku payment URL
+// POST: Generate Duitku payment URL
 router.post("/duitku-token", authenticateToken, async (req, res) => {
   const { paketId, childId } = req.body;
 
@@ -154,10 +155,14 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
       process.env.DUITKU_CALLBACK_URL?.trim() || "http://example.com/callback";
 
     const paymentAmount = Math.round(Number(paket.price));
-    const merchantOrderId = "INV-" + Date.now();
+
+    // Gunakan ID unik untuk merchantOrderId
+    const merchantOrderId =
+      "INV-" + Date.now() + "-" + Math.floor(Math.random() * 10000);
+
     const productDetails = paket.name;
 
-    // Signature MD5 sesuai dokumentasi Duitku: merchantCode + merchantOrderId + paymentAmount + merchantKey
+    // Buat signature MD5
     const signatureString =
       merchantCode + merchantOrderId + paymentAmount + merchantKey;
     const signature = crypto
@@ -165,10 +170,9 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
       .update(signatureString)
       .digest("hex");
 
-    // Detail alamat customer (optional, tapi bagus diisi)
     const address = {
       firstName: user.name || "FirstName",
-      lastName: "", // Jika ada lastName bisa diisi
+      lastName: "",
       address: "Alamat belum diisi",
       city: "Kota belum diisi",
       postalCode: "00000",
@@ -176,7 +180,6 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
       countryCode: "ID",
     };
 
-    // Detail customer
     const customerDetail = {
       firstName: user.name || "FirstName",
       lastName: "",
@@ -186,7 +189,6 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
       shippingAddress: address,
     };
 
-    // Contoh itemDetails, sesuaikan jika punya detail produk yang lebih akurat
     const itemDetails = [
       {
         name: paket.name,
@@ -195,25 +197,27 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
       },
     ];
 
-    // Payload lengkap sesuai dokumentasi Duitku
     const payload = {
       merchantCode,
       paymentAmount,
-      paymentMethod: "SP", // Contoh VC = Credit Card, bisa kamu ganti sesuai kebutuhan
+      paymentMethod: "SP", // Bisa diganti sesuai kebutuhan (VA, QRIS, dll)
       merchantOrderId,
       productDetails,
       email: user.email,
       phoneNumber: user.phone || "08123456789",
-      additionalParam: "", // opsional
+      additionalParam: "",
       merchantUserInfo: user.email,
       customerVaName: anak.name || "Nama Anak",
       returnUrl,
       callbackUrl,
-      expiryPeriod: 10, // menit, sesuai dokumentasi
+      expiryPeriod: 10,
       signature,
       itemDetails,
       customerDetail,
     };
+
+    // [Optional] Log payload untuk debugging
+    console.log("Payload ke Duitku:", JSON.stringify(payload, null, 2));
 
     const resp = await axios.post(
       "https://sandbox.duitku.com/webapi/api/merchant/v2/inquiry",
@@ -221,7 +225,6 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
       { headers: { "Content-Type": "application/json" } }
     );
 
-    // Response sukses
     if (resp.status === 200 && resp.data.statusCode === "00") {
       return res.json({
         paymentUrl: resp.data.paymentUrl,
