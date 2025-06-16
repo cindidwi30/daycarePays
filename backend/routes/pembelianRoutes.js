@@ -200,20 +200,15 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
     const payload = {
       merchantCode,
       paymentAmount,
-      paymentMethod: "QR", // pake QRIS
-      merchantOrderId,
+      merchantOrderId: orderId,
       productDetails,
-      email: user.email,
-      phoneNumber: user.phone || "08123456789",
-      additionalParam: "",
-      merchantUserInfo: user.email,
-      customerVaName: anak.name || "Nama Anak",
+      email: user.email || "tes@email.com",
+      phoneNumber: user.phone || "081234567890",
       returnUrl,
       callbackUrl,
-      expiryPeriod: 10,
       signature,
-      itemDetails,
-      customerDetail,
+      expiryPeriod: 60, // menit
+      // jangan sertakan paymentMethod kalau ingin semua channel aktif muncul
     };
 
     const resp = await axios.post(
