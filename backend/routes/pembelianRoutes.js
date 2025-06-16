@@ -1,5 +1,3 @@
-// pembelianRoutes.js
-
 const express = require("express");
 const router = express.Router();
 const Pembelian = require("../models/Pembelian");
@@ -132,7 +130,6 @@ router.get("/admin/all", authenticateToken, async (req, res) => {
 });
 
 // POST: Generate Duitku payment URL
-// POST: Generate Duitku payment URL
 router.post("/duitku-token", authenticateToken, async (req, res) => {
   const { paketId, childId } = req.body;
 
@@ -150,19 +147,17 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
     const merchantCode = "DS23357";
     const merchantKey = "b8112db3b7b3018909665205141c1ae8";
     const returnUrl =
-      process.env.DUITKU_RETURN_URL?.trim() || "http://example.com/return";
+      process.env.DUITKU_RETURN_URL ||
+      "https://daycare-pays.vercel.app/dashboard";
     const callbackUrl =
-      process.env.DUITKU_CALLBACK_URL?.trim() || "http://example.com/callback";
+      process.env.DUITKU_CALLBACK_URL ||
+      "https://daycarepays-backend.up.railway.app/api/pembelian/callback-duitku";
 
     const paymentAmount = Math.round(Number(paket.price));
-
-    // Gunakan ID unik untuk merchantOrderId
     const merchantOrderId =
       "INV-" + Date.now() + "-" + Math.floor(Math.random() * 10000);
-
     const productDetails = paket.name;
 
-    // Buat signature MD5
     const signatureString =
       merchantCode + merchantOrderId + paymentAmount + merchantKey;
     const signature = crypto
@@ -180,27 +175,10 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
       countryCode: "ID",
     };
 
-    const customerDetail = {
-      firstName: user.name || "FirstName",
-      lastName: "",
-      email: user.email,
-      phoneNumber: user.phone || "08123456789",
-      billingAddress: address,
-      shippingAddress: address,
-    };
-
-    const itemDetails = [
-      {
-        name: paket.name,
-        price: paymentAmount,
-        quantity: 1,
-      },
-    ];
-
     const payload = {
       merchantCode,
       paymentAmount,
-      paymentMethod: "SP", // Bisa diganti sesuai kebutuhan (VA, QRIS, dll)
+      paymentMethod: "SP",
       merchantOrderId,
       productDetails,
       email: user.email,
@@ -212,11 +190,23 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
       callbackUrl,
       expiryPeriod: 10,
       signature,
-      itemDetails,
-      customerDetail,
+      itemDetails: [
+        {
+          name: paket.name,
+          price: paymentAmount,
+          quantity: 1,
+        },
+      ],
+      customerDetail: {
+        firstName: user.name || "FirstName",
+        lastName: "",
+        email: user.email,
+        phoneNumber: user.phone || "08123456789",
+        billingAddress: address,
+        shippingAddress: address,
+      },
     };
 
-    // [Optional] Log payload untuk debugging
     console.log("Payload ke Duitku:", JSON.stringify(payload, null, 2));
 
     const resp = await axios.post(
