@@ -199,7 +199,7 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
     const payload = {
       merchantCode,
       paymentAmount,
-      paymentMethod: "DQ", // Contoh VC = Credit Card, bisa kamu ganti sesuai kebutuhan
+      paymentMethod: "SP", // Contoh VC = Credit Card, bisa kamu ganti sesuai kebutuhan
       merchantOrderId,
       productDetails,
       email: user.email,
