@@ -390,17 +390,59 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
 //   }
 // });
 
+// router.post("/callback-duitku", async (req, res) => {
+//   try {
+//     const { merchantOrderId, reference, statusCode, signature } = req.body;
+
+//     const expectedSignature = crypto
+//       .createHash("md5")
+//       .update(merchantOrderId + reference + process.env.DUITKU_MERCHANT_KEY)
+//       .digest("hex");
+
+//     if (signature !== expectedSignature) {
+//       console.warn("Signature tidak valid dari callback Duitku");
+//       return res.sendStatus(400);
+//     }
+
+//     const pembelian = await Pembelian.findOneAndUpdate(
+//       { merchantOrderId },
+//       { status: statusCode === "00" ? "paid" : "failed" },
+//       { new: true }
+//     );
+
+//     if (!pembelian) {
+//       console.warn("Pembelian tidak ditemukan:", merchantOrderId);
+//       return res.sendStatus(404);
+//     }
+
+//     console.log("Pembayaran sukses untuk:", merchantOrderId);
+//     res.sendStatus(200);
+//   } catch (err) {
+//     console.error("Callback Duitku error:", err);
+//     res.sendStatus(500);
+//   }
+// });
 router.post("/callback-duitku", async (req, res) => {
   try {
+    console.log("🔔 [CALLBACK MASUK] Data dari Duitku:", req.body);
+
     const { merchantOrderId, reference, statusCode, signature } = req.body;
+
+    if (!merchantOrderId || !reference || !statusCode || !signature) {
+      console.warn("⚠️  Callback tidak lengkap. Diterima:", req.body);
+      return res.sendStatus(400);
+    }
 
     const expectedSignature = crypto
       .createHash("md5")
       .update(merchantOrderId + reference + process.env.DUITKU_MERCHANT_KEY)
       .digest("hex");
 
+    console.log("🔐 Signature DITERIMA: ", signature);
+    console.log("🔐 Signature HARUSNYA: ", expectedSignature);
+
     if (signature !== expectedSignature) {
-      console.warn("Signature tidak valid dari callback Duitku");
+      console.warn("❌ Signature TIDAK VALID!");
       return res.sendStatus(400);
     }
 
@@ -411,14 +453,20 @@ router.post("/callback-duitku", async (req, res) => {
     );
 
     if (!pembelian) {
-      console.warn("Pembelian tidak ditemukan:", merchantOrderId);
+      console.warn(
+        "❗ Pembelian tidak ditemukan untuk order:",
+        merchantOrderId
+      );
       return res.sendStatus(404);
     }
 
-    console.log("Pembayaran sukses untuk:", merchantOrderId);
+    console.log(
+      "✅ Pembayaran berhasil & status diperbarui untuk:",
+      merchantOrderId
+    );
     res.sendStatus(200);
   } catch (err) {
-    console.error("Callback Duitku error:", err);
+    console.error("🔥 ERROR di callback Duitku:", err);
     res.sendStatus(500);
   }
 });
