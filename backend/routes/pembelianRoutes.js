@@ -132,7 +132,6 @@ router.get("/admin/all", authenticateToken, async (req, res) => {
 });
 
 // POST: Generate Duitku payment URL
-// POST: Generate Duitku payment URL
 router.post("/duitku-token", authenticateToken, async (req, res) => {
   const { paketId, childId } = req.body;
 
@@ -200,14 +199,20 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
     const payload = {
       merchantCode,
       paymentAmount,
-      merchantOrderId, // gunakan yang sudah dideklarasikan
+      paymentMethod: "SP", // Contoh VC = Credit Card, bisa kamu ganti sesuai kebutuhan
+      merchantOrderId,
       productDetails,
-      email: user.email || "tes@email.com",
-      phoneNumber: user.phone || "081234567890",
+      email: user.email,
+      phoneNumber: user.phone || "08123456789",
+      additionalParam: "", // opsional
+      merchantUserInfo: user.email,
+      customerVaName: anak.name || "Nama Anak",
       returnUrl,
       callbackUrl,
+      expiryPeriod: 10, // menit, sesuai dokumentasi
       signature,
-      expiryPeriod: 60,
+      itemDetails,
+      customerDetail,
     };
 
     const resp = await axios.post(
