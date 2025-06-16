@@ -127,10 +127,9 @@ const FormTambahAnak = () => {
     }
   };
 
-  const handleBayarDuitku = async (e) => {
+  const handleBayarMidtrans = async (e) => {
     e.preventDefault();
 
-    // Validasi dasar
     if (!form.name || !form.birthDate || !form.gender || !form.paketId) {
       alert("Nama, tanggal lahir, gender, dan paket wajib diisi.");
       return;
@@ -142,7 +141,7 @@ const FormTambahAnak = () => {
     }
 
     try {
-      // Step 1: tambah anak
+      // Step 1: Tambah Anak
       const anakRes = await axios.post(
         `${process.env.REACT_APP_API_URL}/api/anak`,
         {
@@ -163,9 +162,9 @@ const FormTambahAnak = () => {
 
       const newChildId = anakRes.data._id;
 
-      // Step 2: generate Duitku payment URL
+      // Step 2: Minta token pembayaran Midtrans
       const bayarRes = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/pembelian/duitku-token`,
+        `${process.env.REACT_APP_API_URL}/api/pembelian/midtrans-token`,
         {
           paketId: form.paketId,
           childId: newChildId,
@@ -175,19 +174,31 @@ const FormTambahAnak = () => {
         }
       );
 
-      // Redirect ke halaman pembayaran Duitku
-      window.location.href = bayarRes.data.paymentUrl;
+      const snapToken = bayarRes.data.token;
+
+      // Step 3: Panggil Snap popup
+      window.snap.pay(snapToken, {
+        onSuccess: function (result) {
+          alert("Pembayaran berhasil!");
+          console.log("✅ SUCCESS:", result);
+        },
+        onPending: function (result) {
+          alert("Menunggu pembayaran...");
+          console.log("🕒 PENDING:", result);
+        },
+        onError: function (result) {
+          alert("Terjadi kesalahan pembayaran.");
+          console.error("❌ ERROR:", result);
+        },
+        onClose: function () {
+          alert("Kamu menutup popup pembayaran.");
+        },
+      });
     } catch (err) {
       const detail = err?.response?.data?.detail || err.message;
-
-      console.error("Error saat mendaftarkan & bayar:", detail);
-      alert("Gagal menambahkan anak atau mendapatkan payment URL: " + detail);
+      console.error("🔥 Gagal membuat pembayaran Midtrans:", detail);
+      alert("Gagal membuat pembayaran Midtrans: " + detail);
     }
-
-    // console.error(
-    //   "Error saat mendaftarkan & bayar:",
-    //   err.response?.data || err.message
-    // );
   };
 
   return (
@@ -340,7 +351,7 @@ const FormTambahAnak = () => {
 
         <button
           type="button"
-          onClick={handleBayarDuitku}
+          onClick={handleBayarMidtrans}
           className="btn btn-success"
         >
           Bayar dan Daftarkan Anak

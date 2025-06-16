@@ -11,17 +11,6 @@ const AdminSummary = () => {
 
   // Fetch the total number of packages and parent users
   useEffect(() => {
-    // Fetch the total number of packages
-    // axios
-    //   .get("http://localhost:5000/api/admin/paket/count")
-    //   .then((response) => {
-    //     setTotalPackages(response.data.count); // Set the total number of packages
-    //   })
-    //   .catch((err) => {
-    //     setError("Failed to fetch package count");
-    //     console.error(err);
-    //   });
-
     // Fetch the total number of parent users
     axios
       .get("http://localhost:5000/api/admin/user/parent/count") // Make sure this API endpoint is correct

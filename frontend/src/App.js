@@ -29,6 +29,7 @@ import PengasuhSummary from "./components/caregiver/dashboard/PengasuhSummary.js
 import JadwalDaycareHariIni from "./components/parents/jadwal/JadwalDaycare.js";
 import AdminRiwayatPembelian from "./components/admin/pembelian/AdminRiwayatPembelian.js";
 import AdminChildrenPage from "./components/admin/anak/AdminChildrenPage.js";
+import PaymentSuccess from "./components/parents/anak/PaymentSuccess.js";
 
 function AppWrapper() {
   return (
@@ -71,6 +72,9 @@ function App() {
     <Routes>
       {/* Redirect root ke login */}
       <Route path="/" element={<Navigate to="/login" replace />} />
+
+      {/* Payment success page (tanpa autentikasi) */}
+      <Route path="/payment-success" element={<PaymentSuccess />} />
 
       {/* Login route (cukup satu saja) */}
       <Route
