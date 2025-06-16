@@ -200,17 +200,17 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
     const payload = {
       merchantCode,
       paymentAmount,
-      paymentMethod: "VC", // Contoh VC = Credit Card, bisa kamu ganti sesuai kebutuhan
+      paymentMethod: "QR", // pake QRIS
       merchantOrderId,
       productDetails,
       email: user.email,
       phoneNumber: user.phone || "08123456789",
-      additionalParam: "", // opsional
+      additionalParam: "",
       merchantUserInfo: user.email,
       customerVaName: anak.name || "Nama Anak",
       returnUrl,
       callbackUrl,
-      expiryPeriod: 10, // menit, sesuai dokumentasi
+      expiryPeriod: 10,
       signature,
       itemDetails,
       customerDetail,
