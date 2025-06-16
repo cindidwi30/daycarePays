@@ -9,6 +9,7 @@ const Anak = require("../models/Child");
 const axios = require("axios");
 const crypto = require("crypto");
 const moment = require("moment");
+const midtransClient = require("midtrans-client");
 
 // Middleware verifikasi token
 function authenticateToken(req, res, next) {
@@ -132,114 +133,7 @@ router.get("/admin/all", authenticateToken, async (req, res) => {
   }
 });
 
-// POST: Generate Duitku payment URL
-// router.post("/duitku-token", authenticateToken, async (req, res) => {
-//   const { paketId, childId } = req.body;
-
-//   if (!paketId || !childId)
-//     return res.status(400).json({ error: "paketId & childId diperlukan." });
-
-//   try {
-//     const paket = await Paket.findById(paketId);
-//     const user = await User.findById(req.user.id);
-//     const anak = await Anak.findById(childId);
-
-//     if (!paket || !user || !anak)
-//       return res.status(404).json({ error: "Data tidak ditemukan." });
-
-//     const merchantCode = "DS23357";
-//     const merchantKey = "b8112db3b7b3018909665205141c1ae8";
-//     const returnUrl =
-//       process.env.DUITKU_RETURN_URL ||
-//       "https://daycare-pays.vercel.app/dashboard";
-//     const callbackUrl =
-//       process.env.DUITKU_CALLBACK_URL ||
-//       "https://daycarepays-backend.up.railway.app/api/pembelian/callback-duitku";
-
-//     const paymentAmount = Math.round(Number(paket.price));
-//     const merchantOrderId =
-//       "INV-" + Date.now() + "-" + Math.floor(Math.random() * 10000);
-//     const productDetails = paket.name;
-
-//     const signatureString =
-//       merchantCode + merchantOrderId + paymentAmount + merchantKey;
-//     const signature = crypto
-//       .createHash("md5")
-//       .update(signatureString)
-//       .digest("hex");
-
-//     const address = {
-//       firstName: user.name || "FirstName",
-//       lastName: "",
-//       address: "Alamat belum diisi",
-//       city: "Kota belum diisi",
-//       postalCode: "00000",
-//       phone: user.phone || "08123456789",
-//       countryCode: "ID",
-//     };
-
-//     const payload = {
-//       merchantCode,
-//       paymentAmount,
-//       paymentMethod: "SP",
-//       merchantOrderId,
-//       productDetails,
-//       email: user.email,
-//       phoneNumber: user.phone || "08123456789",
-//       additionalParam: "",
-//       merchantUserInfo: user.email,
-//       customerVaName: anak.name || "Nama Anak",
-//       returnUrl,
-//       callbackUrl,
-//       expiryPeriod: 60,
-//       signature,
-//       itemDetails: [
-//         {
-//           name: paket.name,
-//           price: paymentAmount,
-//           quantity: 1,
-//         },
-//       ],
-//       customerDetail: {
-//         firstName: user.name || "FirstName",
-//         lastName: "",
-//         email: user.email,
-//         phoneNumber: user.phone || "08123456789",
-//         billingAddress: address,
-//         shippingAddress: address,
-//       },
-//     };
-
-//     console.log("Payload ke Duitku:", JSON.stringify(payload, null, 2));
-
-//     const resp = await axios.post(
-//       "https://sandbox.duitku.com/webapi/api/merchant/v2/inquiry",
-//       payload,
-//       { headers: { "Content-Type": "application/json" } }
-//     );
-
-//     if (resp.status === 200 && resp.data.statusCode === "00") {
-//       return res.json({
-//         paymentUrl: resp.data.paymentUrl,
-//         reference: resp.data.reference,
-//         vaNumber: resp.data.vaNumber || null,
-//       });
-//     } else {
-//       return res.status(500).json({
-//         error: "Gagal generate Duitku payment URL.",
-//         detail: resp.data,
-//       });
-//     }
-//   } catch (err) {
-//     console.error("Duitku error:", err?.response?.data || err.message);
-//     return res.status(500).json({
-//       error: "Gagal generate Duitku payment URL.",
-//       detail: err?.response?.data || err.message,
-//     });
-//   }
-// });
-
-router.post("/duitku-token", authenticateToken, async (req, res) => {
+router.post("/midtrans-token", authenticateToken, async (req, res) => {
   const { paketId, childId } = req.body;
 
   if (!paketId || !childId)
@@ -253,220 +147,93 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
     if (!paket || !user || !anak)
       return res.status(404).json({ error: "Data tidak ditemukan." });
 
-    const merchantCode = "DS23357";
-    const merchantKey = "b8112db3b7b3018909665205141c1ae8";
-    const returnUrl =
-      process.env.DUITKU_RETURN_URL ||
-      "https://daycare-pays.vercel.app/dashboard";
-    const callbackUrl =
-      process.env.DUITKU_CALLBACK_URL ||
-      "https://daycarepays-backend.up.railway.app/api/pembelian/callback-duitku";
-
-    const paymentAmount = Math.round(Number(paket.price));
     const merchantOrderId =
       "INV-" + Date.now() + "-" + Math.floor(Math.random() * 10000);
-    const productDetails = paket.name;
 
-    const signatureString =
-      merchantCode + merchantOrderId + paymentAmount + merchantKey;
-    const signature = crypto
-      .createHash("md5")
-      .update(signatureString)
-      .digest("hex");
-
-    const address = {
-      firstName: user.name || "FirstName",
-      lastName: "",
-      address: "Alamat belum diisi",
-      city: "Kota belum diisi",
-      postalCode: "00000",
-      phone: user.phone || "08123456789",
-      countryCode: "ID",
-    };
-
-    const payload = {
-      merchantCode,
-      paymentAmount,
-      paymentMethod: "SP",
+    // Buat transaksi di database
+    const pembelian = new Pembelian({
+      userId: req.user.id,
+      paketId,
+      childId,
       merchantOrderId,
-      productDetails,
-      email: user.email,
-      phoneNumber: user.phone || "08123456789",
-      additionalParam: "",
-      merchantUserInfo: user.email,
-      customerVaName: anak.name || "Nama Anak",
-      returnUrl,
-      callbackUrl,
-      expiryPeriod: 60,
-      signature,
-      itemDetails: [
+      status: "pending",
+    });
+    await pembelian.save();
+
+    // Midtrans Snap Config
+    const snap = new midtransClient.Snap({
+      isProduction: false,
+      serverKey: process.env.MIDTRANS_SERVER_KEY,
+      clientKey: process.env.MIDTRANS_CLIENT_KEY,
+    });
+
+    const parameter = {
+      transaction_details: {
+        order_id: merchantOrderId,
+        gross_amount: Math.round(paket.price),
+      },
+      customer_details: {
+        first_name: user.name,
+        email: user.email,
+        phone: user.phone || "08123456789",
+      },
+      item_details: [
         {
+          id: paket._id.toString(),
           name: paket.name,
-          price: paymentAmount,
           quantity: 1,
+          price: Math.round(paket.price),
         },
       ],
-      customerDetail: {
-        firstName: user.name || "FirstName",
-        lastName: "",
-        email: user.email,
-        phoneNumber: user.phone || "08123456789",
-        billingAddress: address,
-        shippingAddress: address,
-      },
     };
 
-    const resp = await axios.post(
-      "https://sandbox.duitku.com/webapi/api/merchant/v2/inquiry",
-      payload,
-      { headers: { "Content-Type": "application/json" } }
-    );
-
-    if (resp.status === 200 && resp.data.statusCode === "00") {
-      // Simpan transaksi ke database
-      const pembelian = new Pembelian({
-        userId: req.user.id,
-        paketId,
-        childId,
-        merchantOrderId,
-        status: "pending",
-      });
-      await pembelian.save();
-
-      return res.json({
-        paymentUrl: resp.data.paymentUrl,
-        reference: resp.data.reference,
-        vaNumber: resp.data.vaNumber || null,
-        merchantOrderId,
-      });
-    } else {
-      return res.status(500).json({
-        error: "Gagal generate Duitku payment URL.",
-        detail: resp.data,
-      });
-    }
-  } catch (err) {
-    console.error("Duitku error:", err?.response?.data || err.message);
-    return res.status(500).json({
-      error: "Gagal generate Duitku payment URL.",
-      detail: err?.response?.data || err.message,
+    const snapResponse = await snap.createTransaction(parameter);
+    res.json({
+      token: snapResponse.token,
+      redirect_url: snapResponse.redirect_url,
     });
+  } catch (err) {
+    console.error("❌ Midtrans error:", err.message);
+    res.status(500).json({ error: "Gagal membuat transaksi Midtrans." });
   }
 });
-
-// POST: Callback dari Duitku
-// router.post("/callback-duitku", async (req, res) => {
-//   try {
-//     const { merchantOrderId, reference, statusCode, signature } = req.body;
-
-//     // Optional: verifikasi signature Duitku
-//     const expectedSignature = crypto
-//       .createHash("md5")
-//       .update(merchantOrderId + reference + process.env.DUITKU_MERCHANT_KEY)
-//       .digest("hex");
-
-//     if (signature !== expectedSignature) {
-//       console.warn("Signature tidak valid dari callback Duitku");
-//       return res.sendStatus(400);
-//     }
-
-//     // Update status di database
-//     const pembelian = await Pembelian.findOneAndUpdate(
-//       { merchantOrderId },
-//       { status: statusCode === "00" ? "paid" : "failed" },
-//       { new: true }
-//     );
-
-//     if (!pembelian) {
-//       console.warn("Pembelian tidak ditemukan:", merchantOrderId);
-//       return res.sendStatus(404);
-//     }
-
-//     console.log("Pembayaran sukses untuk:", merchantOrderId);
-//     res.sendStatus(200);
-//   } catch (err) {
-//     console.error("Callback Duitku error:", err);
-//     res.sendStatus(500);
-//   }
-// });
-
-// router.post("/callback-duitku", async (req, res) => {
-//   try {
-//     const { merchantOrderId, reference, statusCode, signature } = req.body;
-
-//     const expectedSignature = crypto
-//       .createHash("md5")
-//       .update(merchantOrderId + reference + process.env.DUITKU_MERCHANT_KEY)
-//       .digest("hex");
-
-//     if (signature !== expectedSignature) {
-//       console.warn("Signature tidak valid dari callback Duitku");
-//       return res.sendStatus(400);
-//     }
-
-//     const pembelian = await Pembelian.findOneAndUpdate(
-//       { merchantOrderId },
-//       { status: statusCode === "00" ? "paid" : "failed" },
-//       { new: true }
-//     );
-
-//     if (!pembelian) {
-//       console.warn("Pembelian tidak ditemukan:", merchantOrderId);
-//       return res.sendStatus(404);
-//     }
-
-//     console.log("Pembayaran sukses untuk:", merchantOrderId);
-//     res.sendStatus(200);
-//   } catch (err) {
-//     console.error("Callback Duitku error:", err);
-//     res.sendStatus(500);
-//   }
-// });
-router.post("/callback-duitku", async (req, res) => {
+router.post("/callback-midtrans", async (req, res) => {
   try {
-    console.log("🔔 [CALLBACK MASUK] Data dari Duitku:", req.body);
+    const { order_id, transaction_status } = req.body;
 
-    const { merchantOrderId, reference, statusCode, signature } = req.body;
-
-    if (!merchantOrderId || !reference || !statusCode || !signature) {
-      console.warn("⚠️  Callback tidak lengkap. Diterima:", req.body);
-      return res.sendStatus(400);
+    if (!order_id || !transaction_status) {
+      return res.status(400).json({ error: "Data callback tidak lengkap." });
     }
 
-    const expectedSignature = crypto
-      .createHash("md5")
-      .update(merchantOrderId + reference + process.env.DUITKU_MERCHANT_KEY)
-      .digest("hex");
-
-    console.log("🔐 Signature DITERIMA: ", signature);
-    console.log("🔐 Signature HARUSNYA: ", expectedSignature);
-
-    if (signature !== expectedSignature) {
-      console.warn("❌ Signature TIDAK VALID!");
-      return res.sendStatus(400);
+    let status;
+    if (
+      transaction_status === "settlement" ||
+      transaction_status === "capture"
+    ) {
+      status = "paid";
+    } else if (["deny", "cancel", "expire"].includes(transaction_status)) {
+      status = "failed";
+    } else {
+      status = "pending";
     }
 
     const pembelian = await Pembelian.findOneAndUpdate(
-      { merchantOrderId },
-      { status: statusCode === "00" ? "paid" : "failed" },
+      { merchantOrderId: order_id },
+      { status },
       { new: true }
     );
 
     if (!pembelian) {
-      console.warn(
-        "❗ Pembelian tidak ditemukan untuk order:",
-        merchantOrderId
-      );
+      console.warn("❗ Pembelian tidak ditemukan untuk:", order_id);
       return res.sendStatus(404);
     }
 
     console.log(
-      "✅ Pembayaran berhasil & status diperbarui untuk:",
-      merchantOrderId
+      `✅ Callback Midtrans sukses. Status: ${status} untuk order: ${order_id}`
     );
     res.sendStatus(200);
   } catch (err) {
-    console.error("🔥 ERROR di callback Duitku:", err);
+    console.error("🔥 Callback Midtrans error:", err.message);
     res.sendStatus(500);
   }
 });
