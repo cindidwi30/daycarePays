@@ -241,8 +241,38 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
 
 // POST: Callback dari Duitku
 router.post("/callback-duitku", async (req, res) => {
-  console.log("Callback Duitku:", req.body);
-  res.sendStatus(200);
+  try {
+    const { merchantOrderId, reference, statusCode, signature } = req.body;
+
+    // Optional: verifikasi signature Duitku
+    const expectedSignature = crypto
+      .createHash("md5")
+      .update(merchantOrderId + reference + process.env.DUITKU_MERCHANT_KEY)
+      .digest("hex");
+
+    if (signature !== expectedSignature) {
+      console.warn("Signature tidak valid dari callback Duitku");
+      return res.sendStatus(400);
+    }
+
+    // Update status di database
+    const pembelian = await Pembelian.findOneAndUpdate(
+      { merchantOrderId },
+      { status: statusCode === "00" ? "paid" : "failed" },
+      { new: true }
+    );
+
+    if (!pembelian) {
+      console.warn("Pembelian tidak ditemukan:", merchantOrderId);
+      return res.sendStatus(404);
+    }
+
+    console.log("Pembayaran sukses untuk:", merchantOrderId);
+    res.sendStatus(200);
+  } catch (err) {
+    console.error("Callback Duitku error:", err);
+    res.sendStatus(500);
+  }
 });
 
 module.exports = router;
