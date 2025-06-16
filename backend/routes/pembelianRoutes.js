@@ -85,7 +85,10 @@ router.get("/jadwal-hari-ini/:userId", authenticateToken, async (req, res) => {
           return false;
         }
 
-        return hariIni.isBetween(tglBeli, tglAkhir, null, "[)");
+        return (
+          hariIni.isBetween(tglBeli, tglAkhir, null, "[") ||
+          hariIni.isSame(tglBeli)
+        );
       })
       .map((p) => ({
         childName: p.childId?.name,
@@ -188,7 +191,7 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
       customerVaName: anak.name || "Nama Anak",
       returnUrl,
       callbackUrl,
-      expiryPeriod: 10,
+      expiryPeriod: 60,
       signature,
       itemDetails: [
         {
