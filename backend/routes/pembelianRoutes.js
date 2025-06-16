@@ -132,6 +132,7 @@ router.get("/admin/all", authenticateToken, async (req, res) => {
 });
 
 // POST: Generate Duitku payment URL
+// POST: Generate Duitku payment URL
 router.post("/duitku-token", authenticateToken, async (req, res) => {
   const { paketId, childId } = req.body;
 
@@ -146,45 +147,94 @@ router.post("/duitku-token", authenticateToken, async (req, res) => {
     if (!paket || !user || !anak)
       return res.status(404).json({ error: "Data tidak ditemukan." });
 
-    // HARDCODE SEMENTARA
     const merchantCode = "DS23357";
     const merchantKey = "b8112db3b7b3018909665205141c1ae8";
-    const returnUrl = process.env.DUITKU_RETURN_URL?.trim();
-    const callbackUrl = process.env.DUITKU_CALLBACK_URL?.trim();
+    const returnUrl =
+      process.env.DUITKU_RETURN_URL?.trim() || "http://example.com/return";
+    const callbackUrl =
+      process.env.DUITKU_CALLBACK_URL?.trim() || "http://example.com/callback";
 
     const paymentAmount = Math.round(Number(paket.price));
-    const orderId = "INV-" + Date.now();
+    const merchantOrderId = "INV-" + Date.now();
     const productDetails = paket.name;
 
-    const rawSignature = merchantCode + orderId + paymentAmount + merchantKey;
+    // Signature MD5 sesuai dokumentasi Duitku: merchantCode + merchantOrderId + paymentAmount + merchantKey
+    const signatureString =
+      merchantCode + merchantOrderId + paymentAmount + merchantKey;
     const signature = crypto
-      .createHash("sha256")
-      .update(rawSignature)
+      .createHash("md5")
+      .update(signatureString)
       .digest("hex");
 
+    // Detail alamat customer (optional, tapi bagus diisi)
+    const address = {
+      firstName: user.name || "FirstName",
+      lastName: "", // Jika ada lastName bisa diisi
+      address: "Alamat belum diisi",
+      city: "Kota belum diisi",
+      postalCode: "00000",
+      phone: user.phone || "08123456789",
+      countryCode: "ID",
+    };
+
+    // Detail customer
+    const customerDetail = {
+      firstName: user.name || "FirstName",
+      lastName: "",
+      email: user.email,
+      phoneNumber: user.phone || "08123456789",
+      billingAddress: address,
+      shippingAddress: address,
+    };
+
+    // Contoh itemDetails, sesuaikan jika punya detail produk yang lebih akurat
+    const itemDetails = [
+      {
+        name: paket.name,
+        price: paymentAmount,
+        quantity: 1,
+      },
+    ];
+
+    // Payload lengkap sesuai dokumentasi Duitku
     const payload = {
       merchantCode,
       paymentAmount,
-      merchantOrderId: orderId,
+      paymentMethod: "VC", // Contoh VC = Credit Card, bisa kamu ganti sesuai kebutuhan
+      merchantOrderId,
       productDetails,
-      email: user.email || "tes@email.com",
-      phoneNumber: user.phone || "081234567890",
+      email: user.email,
+      phoneNumber: user.phone || "08123456789",
+      additionalParam: "", // opsional
+      merchantUserInfo: user.email,
+      customerVaName: anak.name || "Nama Anak",
       returnUrl,
       callbackUrl,
+      expiryPeriod: 10, // menit, sesuai dokumentasi
       signature,
-      expiryPeriod: 60, // menit
+      itemDetails,
+      customerDetail,
     };
 
     const resp = await axios.post(
-      "https://sandbox.duitku.com/webapi/api/merchant/v2/paymentmethod/getpaymenturl",
+      "https://sandbox.duitku.com/webapi/api/merchant/v2/inquiry",
       payload,
       { headers: { "Content-Type": "application/json" } }
     );
 
-    return res.json({
-      paymentUrl: resp.data.paymentUrl,
-      reference: resp.data.reference,
-    });
+    // Response sukses
+    if (resp.status === 200 && resp.data.statusCode === "00") {
+      return res.json({
+        paymentUrl: resp.data.paymentUrl,
+        reference: resp.data.reference,
+        vaNumber: resp.data.vaNumber || null,
+      });
+    } else {
+      return res.status(500).json({
+        error: "Gagal generate Duitku payment URL.",
+        detail: resp.data,
+      });
+    }
   } catch (err) {
     console.error("Duitku error:", err?.response?.data || err.message);
     return res.status(500).json({
