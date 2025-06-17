@@ -50,12 +50,8 @@ const JadwalDaycareHariIni = () => {
 
   const getAbsensiForChild = (childId) => {
     if (!childId) return null;
-    return absensi.find(
-      (a) =>
-        a.childId &&
-        (a.childId._id?.toString?.() === childId?.toString?.() ||
-          a.childId === childId)
-    );
+    const idStr = childId.toString?.(); // pastikan bisa dibandingkan
+    return absensi.find((a) => a.childId?.toString?.() === idStr);
   };
 
   const handleBayarDenda = async (absensiId) => {
