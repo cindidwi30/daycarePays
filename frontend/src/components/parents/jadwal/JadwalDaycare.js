@@ -7,29 +7,36 @@ const JadwalDaycareHariIni = () => {
   const [error, setError] = useState(null);
 
   const fetchData = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setError("User belum login.");
+      return;
+    }
+
     try {
-      const token = localStorage.getItem("token");
-      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const decodedToken = JSON.parse(atob(token.split(".")[1]));
+      const userId = decodedToken.id;
 
       const [jadwalRes, absensiRes] = await Promise.all([
         axios.get(
-          "https://daycarepays-backend.up.railway.app/api/jadwal/hari-ini",
-          config
+          `${process.env.REACT_APP_API_URL}/api/pembelian/jadwal-hari-ini/${userId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
         ),
-        axios.get(
-          "https://daycarepays-backend.up.railway.app/api/absensi",
-          config
-        ),
+        axios.get(`${process.env.REACT_APP_API_URL}/api/absensi`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
       ]);
 
       console.log("✅ Absensi:", absensiRes.data);
       console.log("✅ Jadwal:", jadwalRes.data);
 
-      setJadwal(jadwalRes.data);
-      setAbsensi(absensiRes.data);
+      setJadwal(jadwalRes.data || []);
+      setAbsensi(absensiRes.data || []);
     } catch (err) {
-      console.error("❌ Gagal fetch data:", err);
-      setError("Gagal memuat data");
+      console.error("Gagal mengambil data:", err);
+      setError("Gagal mengambil data jadwal atau absensi.");
     }
   };
 
@@ -37,9 +44,15 @@ const JadwalDaycareHariIni = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchData();
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
   const getAbsensiForChild = (childId) => {
     if (!childId) return null;
-
     return absensi.find((a) => {
       const absensiChildId =
         typeof a.childId === "object" ? a.childId._id : a.childId;
@@ -47,41 +60,92 @@ const JadwalDaycareHariIni = () => {
     });
   };
 
+  const handleBayarDenda = async (absensiId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/denda/midtrans-token-denda`,
+        { absensiId },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const { redirect_url } = response.data;
+      window.location.href = redirect_url;
+    } catch (err) {
+      console.error("Gagal membuat transaksi denda:", err);
+      alert("Gagal membuat transaksi denda.");
+    }
+  };
+
+  if (error) return <div className="text-danger">{error}</div>;
+  if (!jadwal || jadwal.length === 0)
+    return <div>Tidak ada jadwal daycare hari ini.</div>;
+
   return (
-    <div>
-      <h2 className="text-xl font-bold mb-4">Jadwal Daycare Hari Ini</h2>
-      {error && <p className="text-red-500">{error}</p>}
+    <div className="container">
+      <h3>Jadwal Daycare Hari Ini</h3>
 
-      {jadwal.length === 0 ? (
-        <p>Tidak ada jadwal hari ini.</p>
-      ) : (
-        <ul className="space-y-4">
-          {jadwal.map((j) => {
-            const childId =
-              typeof j.child === "object" ? j.child._id : j.childId;
-            const absensiAnak = getAbsensiForChild(childId);
+      <button className="btn btn-sm btn-secondary mb-3" onClick={fetchData}>
+        Refresh Status
+      </button>
 
-            const status = absensiAnak?.pulangAt
-              ? "Sudah dijemput"
-              : absensiAnak
-              ? "Hadir"
-              : "Belum absen";
+      {jadwal.map((item, index) => {
+        const childId =
+          typeof item.childId === "object" ? item.childId._id : item.childId;
+        const absensiAnak = getAbsensiForChild(childId);
 
-            return (
-              <li
-                key={j._id}
-                className="border rounded p-4 shadow flex justify-between items-center"
-              >
-                <div>
-                  <p className="font-semibold">Nama: {j.child?.name || "-"}</p>
-                  <p>Paket: {j.paket?.name || "-"}</p>
-                </div>
-                <div className="text-sm text-gray-700">{status}</div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+        const denda = absensiAnak?.lateFee ?? null;
+        const statusBayar = absensiAnak?.dendaSudahDibayar
+          ? "Sudah dibayar"
+          : "Belum dibayar";
+        const statusJemput = absensiAnak?.pulangAt
+          ? "Status jemput: Sudah dijemput"
+          : "Status jemput: Belum dijemput";
+
+        return (
+          <div
+            key={index}
+            className="card mb-3"
+            style={{ width: "18rem", borderLeft: "4px solid #4CAF50" }}
+          >
+            <div className="card-body">
+              <h5 className="card-title">{item.childName}</h5>
+              <p className="card-text">
+                <strong>Jadwal Antar:</strong> {item.startTime} <br />
+                <strong>Jadwal Jemput:</strong> {item.endTime} <br />
+                <small className="text-muted">{item.paketName}</small>
+              </p>
+
+              {denda != null && (
+                <>
+                  <p
+                    className="text-danger fw-bold"
+                    style={{ marginTop: "10px" }}
+                  >
+                    Denda keterlambatan: Rp
+                    {Number(denda).toLocaleString("id-ID")} ({statusBayar})
+                  </p>
+
+                  {!absensiAnak?.dendaSudahDibayar && (
+                    <button
+                      className="btn btn-sm btn-warning"
+                      onClick={() => handleBayarDenda(absensiAnak._id)}
+                    >
+                      Bayar Denda
+                    </button>
+                  )}
+                </>
+              )}
+
+              <p className="text-primary fw-semibold">{statusJemput}</p>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };
