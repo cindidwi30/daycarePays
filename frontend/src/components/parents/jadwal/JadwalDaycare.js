@@ -47,10 +47,9 @@ const JadwalDaycareHariIni = () => {
 
     return absensi.find((a) => {
       const absensiChildId =
-        typeof a.childId === "object"
-          ? a.childId._id?.toString()
-          : a.childId?.toString();
-      return absensiChildId === childId?.toString();
+        typeof a.childId === "object" ? a.childId._id : a.childId;
+
+      return absensiChildId?.toString() === childId?.toString();
     });
   };
 
