@@ -93,6 +93,7 @@ router.get("/jadwal-hari-ini/:userId", authenticateToken, async (req, res) => {
       })
       .map((p) => ({
         childName: p.childId?.name,
+        childId: p.childId?._id, // ✅ Tambahkan ID anak untuk pencocokan
         paketName: p.paketId?.name,
         startTime: p.paketId?.startTime,
         endTime: p.paketId?.endTime,
