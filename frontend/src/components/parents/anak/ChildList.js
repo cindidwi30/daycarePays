@@ -79,16 +79,6 @@ const DaftarAnakDenganForm = () => {
     }
   };
 
-  // useEffect(() => {
-  //   if (token) {
-  //     fetchData();
-  //     fetchPaketList(); // tambahkan ini
-  //   } else {
-  //     setErrorAnak("Token tidak ditemukan, silakan login.");
-  //     setLoadingAnak(false);
-  //   }
-  // }, []);
-
   useEffect(() => {
     if (token) {
       fetchData();
@@ -97,100 +87,73 @@ const DaftarAnakDenganForm = () => {
       setErrorAnak("Token tidak ditemukan, silakan login.");
       setLoadingAnak(false);
     }
-  }, []); // ✅ kosong = hanya sekali jalan
+  }, []);
 
   const onTambahSukses = () => {
     fetchData();
     setShowForm(false);
   };
 
-  // const handlePembelianBaru = async () => {
-  //   if (!selectedChild || !selectedPaketId) return;
+  const handleBayarMidtrans = async (e) => {
+    e.preventDefault();
 
-  //   try {
-  //     await axios.post(
-  //       `${process.env.REACT_APP_API_URL}/api/pembelian`,
-  //       { childId: selectedChild._id, paketId: selectedPaketId },
-  //       { headers: { Authorization: `Bearer ${token}` } }
-  //     );
-  //     alert("Pembelian berhasil!");
-  //     setSelectedChild(null);
-  //     setSelectedPaketId("");
-  //     fetchData();
-  //   } catch (err) {
-  //     console.error("Gagal melakukan pembelian:", err);
-  //     alert("Gagal melakukan pembelian.");
-  //   }
-  // };
-  // const handlePembelianBaru = async () => {
-  //   if (!selectedChild || !selectedPaketId) return;
-
-  //   try {
-  //     const res = await axios.post(
-  //       "http://localhost:5000/api/pembelian/midtrans-token",
-  //       {
-  //         childId: selectedChild._id,
-  //         paketId: selectedPaketId,
-  //       },
-  //       {
-  //         headers: { Authorization: `Bearer ${token}` },
-  //       }
-  //     );
-
-  //     const { token: snapToken } = res.data;
-
-  //     window.snap.pay(snapToken, {
-  //       onSuccess: async function (result) {
-  //         console.log("Payment success:", result);
-  //         alert("Pembayaran berhasil!");
-  //         setSelectedChild(null);
-  //         setSelectedPaketId("");
-  //         fetchData(); // Refresh data anak
-  //       },
-  //       onPending: function (result) {
-  //         console.log("Payment pending:", result);
-  //         alert("Pembayaran sedang diproses.");
-  //       },
-  //       onError: function (result) {
-  //         console.error("Payment error:", result);
-  //         alert("Pembayaran gagal.");
-  //       },
-  //     });
-  //   } catch (err) {
-  //     console.error("Gagal memulai pembayaran:", err);
-  //     alert("Gagal memulai pembayaran.");
-  //   }
-  // };
-  const handlePembelianBaru = async () => {
-    if (!selectedChild || !selectedPaketId) return;
+    if (!selectedChild || !selectedPaketId) {
+      alert("Pilih anak dan paket terlebih dahulu.");
+      return;
+    }
 
     try {
-      const res = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/pembelian/duitku-token`,
+      const bayarRes = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/pembelian/midtrans-token`,
         {
-          childId: selectedChild._id,
           paketId: selectedPaketId,
+          childId: selectedChild._id,
         },
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
 
-      const { paymentUrl } = res.data;
+      const snapToken = bayarRes.data.token;
 
-      // Arahkan user ke Duitku payment URL
-      window.location.href = paymentUrl;
+      window.snap.pay(snapToken, {
+        onSuccess: function (result) {
+          alert("Pembayaran berhasil!");
+          console.log("✅ SUCCESS:", result);
+          fetchData(); // refresh daftar anak
+          setExpandedId(null); // tutup detail
+          setSelectedChild(null);
+          setSelectedPaketId("");
+        },
+        onPending: function (result) {
+          alert("Menunggu pembayaran...");
+          console.log("🕒 PENDING:", result);
+        },
+        onError: function (result) {
+          alert("Terjadi kesalahan pembayaran.");
+          console.error("❌ ERROR:", result);
+        },
+        onClose: function () {
+          alert("Kamu menutup popup pembayaran.");
+        },
+      });
     } catch (err) {
-      console.error(
-        "Gagal memulai pembayaran Duitku:",
-        err.response?.data || err
-      );
-      alert("Gagal memulai pembayaran.");
+      const detail = err?.response?.data?.detail || err.message;
+      console.error("🔥 Gagal membuat pembayaran Midtrans:", detail);
+      alert("Gagal membuat pembayaran Midtrans: " + detail);
     }
   };
 
   const toggleDetail = (id) => {
-    setExpandedId(expandedId === id ? null : id);
+    if (expandedId === id) {
+      setExpandedId(null);
+      setSelectedChild(null);
+      setSelectedPaketId("");
+    } else {
+      setExpandedId(id);
+      setSelectedChild(null);
+      setSelectedPaketId("");
+    }
   };
 
   // Format tanggal "12 Mei 2023"
@@ -301,7 +264,7 @@ const DaftarAnakDenganForm = () => {
                         disabled={
                           selectedChild?._id !== anak._id || !selectedPaketId
                         }
-                        onClick={handlePembelianBaru}
+                        onClick={handleBayarMidtrans}
                       >
                         Beli Paket Ini
                       </button>
