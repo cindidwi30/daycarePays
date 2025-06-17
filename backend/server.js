@@ -14,7 +14,7 @@ const anakRoutes = require("./routes/anakRoutes");
 const pembelianRoutes = require("./routes/pembelianRoutes");
 const pengasuhRoutes = require("./routes/pengasuhRoutes");
 const midtransRoutes = require("./routes/midtrans");
-
+const dendaRoutes = require("./routes/denda");
 dotenv.config();
 
 const app = express();
@@ -86,7 +86,7 @@ app.use("/api/anak", anakRoutes);
 app.use("/api/pengasuh", pengasuhRoutes);
 app.use("/api/midtrans", midtransRoutes);
 app.use("/api/invoice", require("./routes/invoice"));
-
+app.use("/api/denda", dendaRoutes);
 // 404 Handler
 app.use((req, res, next) => {
   res.status(404).json({
