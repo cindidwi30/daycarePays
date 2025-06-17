@@ -20,9 +20,7 @@ const JadwalDaycareHariIni = () => {
       const [jadwalRes, absensiRes] = await Promise.all([
         axios.get(
           `${process.env.REACT_APP_API_URL}/api/pembelian/jadwal-hari-ini/${userId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         ),
         axios.get(`${process.env.REACT_APP_API_URL}/api/absensi`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -31,6 +29,7 @@ const JadwalDaycareHariIni = () => {
 
       setJadwal(jadwalRes.data || []);
       setAbsensi(absensiRes.data || []);
+      console.log("✅ Absensi:", absensiRes.data);
     } catch (err) {
       console.error("Gagal mengambil data:", err);
       setError("Gagal mengambil data jadwal atau absensi.");
@@ -39,19 +38,20 @@ const JadwalDaycareHariIni = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchData();
-    }, 10000);
+    const interval = setInterval(fetchData, 10000);
     return () => clearInterval(interval);
   }, []);
 
   const getAbsensiForChild = (childId) => {
     if (!childId) return null;
-    const idStr = childId.toString?.(); // pastikan bisa dibandingkan
-    return absensi.find((a) => a.childId?.toString?.() === idStr);
+
+    return absensi.find((a) => {
+      const absensiChildId =
+        typeof a.childId === "object"
+          ? a.childId._id?.toString()
+          : a.childId?.toString();
+      return absensiChildId === childId?.toString();
+    });
   };
 
   const handleBayarDenda = async (absensiId) => {
@@ -60,11 +60,7 @@ const JadwalDaycareHariIni = () => {
       const response = await axios.post(
         `${process.env.REACT_APP_API_URL}/api/denda/midtrans-token-denda`,
         { absensiId },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       const { redirect_url } = response.data;
@@ -116,10 +112,7 @@ const JadwalDaycareHariIni = () => {
 
               {denda != null && (
                 <>
-                  <p
-                    className="text-danger fw-bold"
-                    style={{ marginTop: "10px" }}
-                  >
+                  <p className="text-danger fw-bold mt-2">
                     Denda keterlambatan: Rp
                     {Number(denda).toLocaleString("id-ID")} ({statusBayar})
                   </p>
@@ -135,7 +128,7 @@ const JadwalDaycareHariIni = () => {
                 </>
               )}
 
-              <p className="text-primary fw-semibold">{statusJemput}</p>
+              <p className="text-primary fw-semibold mt-2">{statusJemput}</p>
             </div>
           </div>
         );
