@@ -259,7 +259,6 @@ const DaftarAnakDenganForm = () => {
                     {anak.emergencyContact || "-"}
                   </p>
 
-                  {/* Tambahan paket aktif */}
                   <p>
                     <strong>Paket Aktif:</strong>{" "}
                     {anak.paketAktif
@@ -296,33 +295,38 @@ const DaftarAnakDenganForm = () => {
                         ))}
                       </select>
 
-                      <button
-                        className="btn btn-sm btn-success"
-                        disabled={
-                          selectedChild?._id !== anak._id || !selectedPaketId
-                        }
-                        onClick={handleBayarMidtrans}
-                      >
-                        Beli Paket Ini
-                      </button>
+                      <div className="d-flex gap-2 mb-2">
+                        <button
+                          className="btn btn-sm btn-success"
+                          disabled={
+                            selectedChild?._id !== anak._id || !selectedPaketId
+                          }
+                          onClick={handleBayarMidtrans}
+                        >
+                          Beli Paket Ini
+                        </button>
+                      </div>
                     </>
                   )}
-                  <button
-                    className="btn btn-sm btn-warning me-2"
-                    onClick={() => {
-                      setSelectedChild(anak);
-                      setEditingChildId(anak._id);
-                      setShowForm(true);
-                    }}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="btn btn-sm btn-danger"
-                    onClick={() => handleHapusAnak(anak._id)}
-                  >
-                    Hapus
-                  </button>
+
+                  <div className="d-flex gap-2">
+                    <button
+                      className="btn btn-sm btn-warning"
+                      onClick={() => {
+                        setSelectedChild(anak);
+                        setEditingChildId(anak._id);
+                        setShowForm(true);
+                      }}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="btn btn-sm btn-danger"
+                      onClick={() => handleHapusAnak(anak._id)}
+                    >
+                      Hapus
+                    </button>
+                  </div>
                 </div>
               )}
             </li>
