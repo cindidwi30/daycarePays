@@ -1,3 +1,6 @@
+// Register.js
+
+import "bootstrap/dist/css/bootstrap.min.css";
 import { registerUser } from "../services/authService";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -10,15 +13,15 @@ function Register({ setUser }) {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    console.log("Sending data:", { name, email, password }); // Debugging
+    console.log("Sending data:", { name, email, password });
 
     try {
       const response = await registerUser(name, email, password);
       console.log("Response from server:", response.data);
 
       if (response.data.success) {
-        setUser({ role: "parent" });
-        navigate("/dashboard/parent");
+        alert("Registration successful! Please log in.");
+        navigate("/login");
       } else {
         alert(response.data.message || "Registration failed");
       }
@@ -32,43 +35,53 @@ function Register({ setUser }) {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <h2 className="text-2xl font-bold">Register</h2>
-      <form
-        className="mt-4 bg-white p-6 rounded-lg shadow-md"
-        onSubmit={handleRegister}
-      >
-        <input
-          type="text"
-          placeholder="Name"
-          className="block w-full p-2 border mb-2"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          className="block w-full p-2 border mb-2"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          className="block w-full p-2 border mb-2"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <button
-          type="submit"
-          className="w-full bg-green-500 text-white p-2 rounded"
-        >
-          Register
-        </button>
-      </form>
+    <div className="container d-flex justify-content-center align-items-center vh-100">
+      <div className="card p-4 shadow" style={{ width: "400px" }}>
+        <div className="text-center mb-4">
+          <h2 className="mt-2">Create your account</h2>
+        </div>
+        <form onSubmit={handleRegister}>
+          <div className="mb-3">
+            <label className="form-label">Full Name</label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Enter your name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+          </div>
+          <div className="mb-3">
+            <label className="form-label">Email address</label>
+            <input
+              type="email"
+              className="form-control"
+              placeholder="Enter email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className="mb-3">
+            <label className="form-label">Password</label>
+            <input
+              type="password"
+              className="form-control"
+              placeholder="Enter password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <button type="submit" className="btn btn-success w-100">
+            Register
+          </button>
+        </form>
+        <p className="text-center mt-3">
+          Already have an account? <a href="/login">Login here</a>
+        </p>
+      </div>
     </div>
   );
 }
