@@ -1,9 +1,22 @@
 const express = require("express");
 const router = express.Router();
 const midtransClient = require("midtrans-client");
+const jwt = require("jsonwebtoken");
 const Absensi = require("../models/Absensi");
 const User = require("../models/User");
-const { authenticateToken } = require("../middleware/auth");
+
+// Middleware verifikasi token
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "User belum login." });
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ error: "Token tidak valid." });
+    req.user = user;
+    next();
+  });
+}
 
 // ======== ROUTE: Buat Token Midtrans untuk Denda =========
 router.post("/midtrans-token-denda", authenticateToken, async (req, res) => {
@@ -32,7 +45,6 @@ router.post("/midtrans-token-denda", authenticateToken, async (req, res) => {
     const merchantOrderId =
       "DENDA-" + Date.now() + "-" + Math.floor(Math.random() * 10000);
 
-    // Simpan order_id agar bisa dilacak saat callback
     absensi.midtransOrderId = merchantOrderId;
     await absensi.save();
 
