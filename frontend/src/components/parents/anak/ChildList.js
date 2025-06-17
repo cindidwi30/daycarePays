@@ -144,6 +144,24 @@ const DaftarAnakDenganForm = () => {
       alert("Gagal membuat pembayaran Midtrans: " + detail);
     }
   };
+  const handleHapusAnak = async (anakId) => {
+    if (!window.confirm("Yakin ingin menghapus anak ini?")) return;
+
+    try {
+      await axios.delete(
+        `${process.env.REACT_APP_API_URL}/api/anak/${anakId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      alert("Anak berhasil dihapus.");
+      fetchData(); // refresh data anak
+    } catch (err) {
+      console.error("Gagal menghapus anak:", err);
+      alert("Gagal menghapus anak.");
+    }
+  };
 
   const toggleDetail = (id) => {
     if (expandedId === id) {
@@ -201,6 +219,12 @@ const DaftarAnakDenganForm = () => {
                     }}
                   >
                     Edit
+                  </button>
+                  <button
+                    className="btn btn-sm btn-danger"
+                    onClick={() => handleHapusAnak(anak._id)}
+                  >
+                    Hapus
                   </button>
                 </div>
               </div>
@@ -292,6 +316,12 @@ const DaftarAnakDenganForm = () => {
                     }}
                   >
                     Edit
+                  </button>
+                  <button
+                    className="btn btn-sm btn-danger"
+                    onClick={() => handleHapusAnak(anak._id)}
+                  >
+                    Hapus
                   </button>
                 </div>
               )}
