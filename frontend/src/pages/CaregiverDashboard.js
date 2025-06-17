@@ -25,8 +25,8 @@
 //caregiver.js
 
 import React, { useState } from "react";
-import Sidebar from "../components/caregiver/layout/Sidebar";
-import Navbar from "../components/caregiver/layout/Navbar";
+import Sidebar from "../components/caregiver/dashboard/PengasuhSidebar";
+import Navbar from "../components/caregiver/dashboard/PengasuhNavbar";
 import { Outlet } from "react-router-dom";
 
 const CaregiverDashboard = () => {
