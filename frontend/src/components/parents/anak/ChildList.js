@@ -185,12 +185,24 @@ const DaftarAnakDenganForm = () => {
                 <div>
                   <strong>{anak.name}</strong>
                 </div>
-                <button
-                  className="btn btn-sm btn-outline-primary"
-                  onClick={() => toggleDetail(anak._id)}
-                >
-                  {expandedId === anak._id ? "Sembunyikan Detail" : "Detail"}
-                </button>
+                <div>
+                  <button
+                    className="btn btn-sm btn-outline-primary me-2"
+                    onClick={() => toggleDetail(anak._id)}
+                  >
+                    {expandedId === anak._id ? "Sembunyikan Detail" : "Detail"}
+                  </button>
+                  <button
+                    className="btn btn-sm btn-warning"
+                    onClick={() => {
+                      setSelectedChild(anak);
+                      setEditingChildId(anak._id);
+                      setShowForm(true);
+                    }}
+                  >
+                    Edit
+                  </button>
+                </div>
               </div>
 
               {expandedId === anak._id && (
