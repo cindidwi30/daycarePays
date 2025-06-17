@@ -1,4 +1,4 @@
-//parents/anak/childlist
+//ChildList.js
 
 import React, { useState, useEffect } from "react";
 import axios from "axios";
@@ -13,6 +13,7 @@ const DaftarAnakDenganForm = () => {
   const [paketList, setPaketList] = useState([]);
   const [selectedChild, setSelectedChild] = useState(null);
   const [selectedPaketId, setSelectedPaketId] = useState("");
+  const [editingChildId, setEditingChildId] = useState(null);
 
   const token = localStorage.getItem("token");
   const fetchPaketList = async () => {
@@ -270,6 +271,16 @@ const DaftarAnakDenganForm = () => {
                       </button>
                     </>
                   )}
+                  <button
+                    className="btn btn-sm btn-warning me-2"
+                    onClick={() => {
+                      setSelectedChild(anak);
+                      setEditingChildId(anak._id);
+                      setShowForm(true);
+                    }}
+                  >
+                    Edit
+                  </button>
                 </div>
               )}
             </li>
@@ -291,7 +302,16 @@ const DaftarAnakDenganForm = () => {
           >
             Batal
           </button>
-          <FormTambahAnak onTambahSukses={onTambahSukses} />
+          {/* <FormTambahAnak onTambahSukses={onTambahSukses} /> */}
+          <FormTambahAnak
+            defaultValue={selectedChild}
+            onTambahSukses={onTambahSukses}
+            onEditSukses={() => {
+              fetchData();
+              setShowForm(false);
+              setEditingChildId(null);
+            }}
+          />
         </div>
       )}
     </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
-const FormTambahAnak = () => {
+const FormTambahAnak = ({ defaultValue, onEditSukses, onTambahSukses }) => {
   const [form, setForm] = useState({
     name: "",
     birthDate: "",
@@ -22,7 +22,6 @@ const FormTambahAnak = () => {
   const token = localStorage.getItem("token");
 
   useEffect(() => {
-    console.log("Token dari localStorage:", token);
     const fetchPakets = async () => {
       try {
         const res = await axios.get(
@@ -50,6 +49,23 @@ const FormTambahAnak = () => {
     fetchPakets();
   }, [token]);
 
+  useEffect(() => {
+    if (defaultValue) {
+      setForm({
+        name: defaultValue.name || "",
+        birthDate: defaultValue.birthDate?.slice(0, 10) || "",
+        gender: defaultValue.gender || "",
+        placeOfBirth: defaultValue.placeOfBirth || "",
+        bloodType: defaultValue.bloodType || "",
+        allergy: defaultValue.allergy || "",
+        address: defaultValue.address || "",
+        parentPhone: defaultValue.parentPhone || "",
+        emergencyContact: defaultValue.emergencyContact || "",
+        paketId: "", // optional untuk edit
+      });
+    }
+  }, [defaultValue]);
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -59,8 +75,8 @@ const FormTambahAnak = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.name || !form.birthDate || !form.gender || !form.paketId) {
-      alert("Nama, tanggal lahir, gender, dan paket wajib diisi.");
+    if (!form.name || !form.birthDate || !form.gender) {
+      alert("Nama, tanggal lahir, dan gender wajib diisi.");
       return;
     }
 
@@ -70,60 +86,72 @@ const FormTambahAnak = () => {
     }
 
     try {
-      // Tambah anak
-      const res = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/anak`,
-        {
-          name: form.name,
-          birthDate: form.birthDate,
-          gender: form.gender,
-          placeOfBirth: form.placeOfBirth,
-          bloodType: form.bloodType,
-          allergy: form.allergy,
-          address: form.address,
-          parentPhone: form.parentPhone,
-          emergencyContact: form.emergencyContact,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      if (defaultValue) {
+        // MODE EDIT
+        await axios.put(
+          `${process.env.REACT_APP_API_URL}/api/anak/${defaultValue._id}`,
+          form,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        alert("Data anak berhasil diperbarui!");
+        if (onEditSukses) onEditSukses();
+      } else {
+        // MODE TAMBAH
+        const res = await axios.post(
+          `${process.env.REACT_APP_API_URL}/api/anak`,
+          form,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        const newChildId = res.data._id;
+
+        // Beli paket jika dipilih
+        if (form.paketId) {
+          await axios.post(
+            `${process.env.REACT_APP_API_URL}/api/pembelian`,
+            {
+              paketId: form.paketId,
+              childId: newChildId,
+            },
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
         }
-      );
 
-      const newChildId = res.data._id;
+        alert("Anak dan paket berhasil ditambahkan!");
+        if (onTambahSukses) onTambahSukses();
+      }
 
-      // Beli paket untuk anak
-      await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/pembelian`,
-        {
-          paketId: form.paketId,
-          childId: newChildId,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      // Reset form kalau mode tambah
+      if (!defaultValue) {
+        setForm({
+          name: "",
+          birthDate: "",
+          gender: "",
+          placeOfBirth: "",
+          bloodType: "",
+          allergy: "",
+          address: "",
+          parentPhone: "",
+          emergencyContact: "",
+          paketId: "",
+        });
+      }
 
-      alert("Anak dan paket berhasil ditambahkan!");
-      setForm({
-        name: "",
-        birthDate: "",
-        gender: "",
-        placeOfBirth: "",
-        bloodType: "",
-        allergy: "",
-        address: "",
-        parentPhone: "",
-        emergencyContact: "",
-        paketId: "",
-      });
       setError(null);
     } catch (err) {
       console.error(err);
-      alert("Gagal menambahkan anak atau membeli paket.");
+      alert(
+        defaultValue
+          ? "Gagal memperbarui data anak."
+          : "Gagal menambahkan anak atau membeli paket."
+      );
     }
   };
 
@@ -141,20 +169,9 @@ const FormTambahAnak = () => {
     }
 
     try {
-      // Step 1: Tambah Anak
       const anakRes = await axios.post(
         `${process.env.REACT_APP_API_URL}/api/anak`,
-        {
-          name: form.name,
-          birthDate: form.birthDate,
-          gender: form.gender,
-          placeOfBirth: form.placeOfBirth,
-          bloodType: form.bloodType,
-          allergy: form.allergy,
-          address: form.address,
-          parentPhone: form.parentPhone,
-          emergencyContact: form.emergencyContact,
-        },
+        form,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -162,7 +179,6 @@ const FormTambahAnak = () => {
 
       const newChildId = anakRes.data._id;
 
-      // Step 2: Minta token pembayaran Midtrans
       const bayarRes = await axios.post(
         `${process.env.REACT_APP_API_URL}/api/pembelian/midtrans-token`,
         {
@@ -176,7 +192,6 @@ const FormTambahAnak = () => {
 
       const snapToken = bayarRes.data.token;
 
-      // Step 3: Panggil Snap popup
       window.snap.pay(snapToken, {
         onSuccess: function (result) {
           alert("Pembayaran berhasil!");
@@ -203,33 +218,42 @@ const FormTambahAnak = () => {
 
   return (
     <div className="container mt-4">
-      <h3>Tambah Profil Anak</h3>
+      <h3>{defaultValue ? "Edit Profil Anak" : "Tambah Profil Anak"}</h3>
       {error && <div className="alert alert-danger">{error}</div>}
 
       <form onSubmit={handleSubmit}>
-        <div className="mb-3">
-          <label>Nama Anak</label>
-          <input
-            type="text"
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            className="form-control"
-            required
-          />
-        </div>
-
-        <div className="mb-3">
-          <label>Tanggal Lahir</label>
-          <input
-            type="date"
-            name="birthDate"
-            value={form.birthDate}
-            onChange={handleChange}
-            className="form-control"
-            required
-          />
-        </div>
+        {/* Input Fields */}
+        {[
+          ["Nama Anak", "name", "text"],
+          ["Tanggal Lahir", "birthDate", "date"],
+          ["Tempat Lahir", "placeOfBirth", "text"],
+          ["Alergi", "allergy", "text"],
+          ["Alamat", "address", "textarea"],
+          ["Nomor Telepon Orang Tua", "parentPhone", "text"],
+          ["Kontak Darurat", "emergencyContact", "text"],
+        ].map(([label, name, type]) => (
+          <div className="mb-3" key={name}>
+            <label>{label}</label>
+            {type === "textarea" ? (
+              <textarea
+                name={name}
+                value={form[name]}
+                onChange={handleChange}
+                className="form-control"
+                rows={2}
+              />
+            ) : (
+              <input
+                type={type}
+                name={name}
+                value={form[name]}
+                onChange={handleChange}
+                className="form-control"
+                required={["name", "birthDate"].includes(name)}
+              />
+            )}
+          </div>
+        ))}
 
         <div className="mb-3">
           <label>Jenis Kelamin</label>
@@ -244,17 +268,6 @@ const FormTambahAnak = () => {
             <option value="Laki-laki">Laki-laki</option>
             <option value="Perempuan">Perempuan</option>
           </select>
-        </div>
-
-        <div className="mb-3">
-          <label>Tempat Lahir</label>
-          <input
-            type="text"
-            name="placeOfBirth"
-            value={form.placeOfBirth}
-            onChange={handleChange}
-            className="form-control"
-          />
         </div>
 
         <div className="mb-3">
@@ -274,50 +287,6 @@ const FormTambahAnak = () => {
         </div>
 
         <div className="mb-3">
-          <label>Alergi</label>
-          <input
-            type="text"
-            name="allergy"
-            value={form.allergy}
-            onChange={handleChange}
-            className="form-control"
-          />
-        </div>
-
-        <div className="mb-3">
-          <label>Alamat</label>
-          <textarea
-            name="address"
-            value={form.address}
-            onChange={handleChange}
-            className="form-control"
-            rows={2}
-          />
-        </div>
-
-        <div className="mb-3">
-          <label>Nomor Telepon Orang Tua</label>
-          <input
-            type="text"
-            name="parentPhone"
-            value={form.parentPhone}
-            onChange={handleChange}
-            className="form-control"
-          />
-        </div>
-
-        <div className="mb-3">
-          <label>Kontak Darurat</label>
-          <input
-            type="text"
-            name="emergencyContact"
-            value={form.emergencyContact}
-            onChange={handleChange}
-            className="form-control"
-          />
-        </div>
-
-        <div className="mb-3">
           <label>Pilih Paket</label>
           {loading ? (
             <div className="form-text">Memuat daftar paket...</div>
@@ -327,7 +296,7 @@ const FormTambahAnak = () => {
               value={form.paketId}
               onChange={handleChange}
               className="form-control"
-              required
+              required={!defaultValue}
             >
               <option value="">-- Pilih Paket --</option>
               {paketList.length === 0 ? (
@@ -349,13 +318,19 @@ const FormTambahAnak = () => {
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={handleBayarMidtrans}
-          className="btn btn-success"
-        >
-          Bayar dan Daftarkan Anak
+        <button type="submit" className="btn btn-primary me-2">
+          Simpan Data Anak
         </button>
+
+        {!defaultValue && (
+          <button
+            type="button"
+            onClick={handleBayarMidtrans}
+            className="btn btn-success"
+          >
+            Bayar dan Daftarkan Anak
+          </button>
+        )}
       </form>
     </div>
   );
