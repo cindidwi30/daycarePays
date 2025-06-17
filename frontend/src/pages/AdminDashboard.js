@@ -1,11 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import AdminSidebar from "../components/admin/dashboard/AdminSidebar";
 import AdminNavbar from "../components/admin/dashboard/AdminNavbar";
-import { Outlet } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 
 function AdminDashboard() {
   const navigate = useNavigate();
+  const [sidebarVisible, setSidebarVisible] = useState(true);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -13,18 +13,19 @@ function AdminDashboard() {
   };
 
   return (
-    <div className="flex">
-      <AdminSidebar />
+    <div className="d-flex">
+      {sidebarVisible && <AdminSidebar visible={sidebarVisible} />}
       <div
         className="flex-grow-1 bg-white min-vh-100 d-flex flex-column"
-        style={{ marginLeft: "250px" }}
+        style={{ marginLeft: sidebarVisible ? "250px" : "0" }}
       >
-        <AdminNavbar />
+        <AdminNavbar toggleSidebar={() => setSidebarVisible(!sidebarVisible)} />
         <div className="container mt-4">
-          <Outlet /> {/* This renders the child route (Summary, Biodata) */}
+          <Outlet />
         </div>
       </div>
     </div>
   );
 }
+
 export default AdminDashboard;

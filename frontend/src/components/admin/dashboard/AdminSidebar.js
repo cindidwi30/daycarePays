@@ -38,7 +38,9 @@ const navItems = [
   },
 ];
 
-const AdminSidebar = () => {
+const AdminSidebar = ({ visible }) => {
+  if (!visible) return null; // jika tidak visible, return null (sembunyikan)
+
   return (
     <div
       className="bg-dark text-white vh-100 position-fixed top-0 start-0 p-3 shadow"
