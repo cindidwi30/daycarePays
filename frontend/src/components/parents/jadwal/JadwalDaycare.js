@@ -46,6 +46,27 @@ const JadwalDaycareHariIni = () => {
     return absensi.find((a) => a.childId && a.childId._id === childId);
   };
 
+  const handleBayarDenda = async (absensiId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/denda/midtrans-token-denda`,
+        { absensiId },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const { redirect_url } = response.data;
+      window.location.href = redirect_url;
+    } catch (err) {
+      console.error("Gagal membuat transaksi denda:", err);
+      alert("Gagal membuat transaksi denda.");
+    }
+  };
+
   if (error) return <div className="text-danger">{error}</div>;
   if (!jadwal || jadwal.length === 0)
     return <div>Tidak ada jadwal daycare hari ini.</div>;
@@ -81,13 +102,24 @@ const JadwalDaycareHariIni = () => {
               </p>
 
               {denda != null && (
-                <p
-                  className="text-danger fw-bold"
-                  style={{ marginTop: "10px" }}
-                >
-                  Denda keterlambatan: Rp{Number(denda).toLocaleString("id-ID")}{" "}
-                  ({statusBayar})
-                </p>
+                <>
+                  <p
+                    className="text-danger fw-bold"
+                    style={{ marginTop: "10px" }}
+                  >
+                    Denda keterlambatan: Rp
+                    {Number(denda).toLocaleString("id-ID")} ({statusBayar})
+                  </p>
+
+                  {!absensiAnak?.dendaSudahDibayar && (
+                    <button
+                      className="btn btn-sm btn-warning"
+                      onClick={() => handleBayarDenda(absensiAnak._id)}
+                    >
+                      Bayar Denda
+                    </button>
+                  )}
+                </>
               )}
 
               <p className="text-primary fw-semibold">{statusJemput}</p>
