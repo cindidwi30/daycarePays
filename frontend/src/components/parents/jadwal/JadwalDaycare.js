@@ -158,7 +158,7 @@ const JadwalDaycareHariIni = () => {
               <p className="text-success fw-semibold">{hadirJam}</p>
               <p className="text-primary fw-semibold">{pulangJam}</p>
 
-              {denda != null && (
+              {denda != null && denda > 0 && (
                 <>
                   <p className="text-danger fw-bold">
                     Denda keterlambatan: Rp
