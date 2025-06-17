@@ -7,39 +7,28 @@ const JadwalDaycareHariIni = () => {
   const [error, setError] = useState(null);
 
   const fetchData = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setError("User belum login.");
-      return;
-    }
-
     try {
-      const decodedToken = JSON.parse(atob(token.split(".")[1]));
-      const userId = decodedToken.id;
+      const token = localStorage.getItem("token");
+      const config = { headers: { Authorization: `Bearer ${token}` } };
 
       const [jadwalRes, absensiRes] = await Promise.all([
-        axios.get(
-          `${process.env.REACT_APP_API_URL}/api/pembelian/jadwal-hari-ini/${userId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        ),
-        axios.get(`${process.env.REACT_APP_API_URL}/api/absensi`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
+        axios.get("/api/jadwal/hari-ini", config),
+        axios.get("/api/absensi", config),
       ]);
 
-      setJadwal(jadwalRes.data || []);
-      setAbsensi(absensiRes.data || []);
       console.log("✅ Absensi:", absensiRes.data);
+      console.log("✅ Jadwal:", jadwalRes.data);
+
+      setJadwal(jadwalRes.data);
+      setAbsensi(absensiRes.data);
     } catch (err) {
-      console.error("Gagal mengambil data:", err);
-      setError("Gagal mengambil data jadwal atau absensi.");
+      console.error(err);
+      setError("Gagal memuat data");
     }
   };
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 10000);
-    return () => clearInterval(interval);
   }, []);
 
   const getAbsensiForChild = (childId) => {
@@ -48,90 +37,42 @@ const JadwalDaycareHariIni = () => {
     return absensi.find((a) => {
       const absensiChildId =
         typeof a.childId === "object" ? a.childId._id : a.childId;
-
       return absensiChildId?.toString() === childId?.toString();
     });
   };
 
-  const handleBayarDenda = async (absensiId) => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/denda/midtrans-token-denda`,
-        { absensiId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      const { redirect_url } = response.data;
-      window.location.href = redirect_url;
-    } catch (err) {
-      console.error("Gagal membuat transaksi denda:", err);
-      alert("Gagal membuat transaksi denda.");
-    }
-  };
-
-  if (error) return <div className="text-danger">{error}</div>;
-  if (!jadwal || jadwal.length === 0)
-    return <div>Tidak ada jadwal daycare hari ini.</div>;
-
   return (
-    <div className="container">
-      <h3>Jadwal Daycare Hari Ini</h3>
+    <div>
+      <h2 className="text-xl font-bold mb-4">Jadwal Daycare Hari Ini</h2>
+      {error && <p className="text-red-500">{error}</p>}
 
-      <button className="btn btn-sm btn-secondary mb-3" onClick={fetchData}>
-        Refresh Status
-      </button>
+      {jadwal.length === 0 ? (
+        <p>Tidak ada jadwal hari ini.</p>
+      ) : (
+        <ul className="space-y-4">
+          {jadwal.map((j) => {
+            const absensiAnak = getAbsensiForChild(j.childId);
+            const status = absensiAnak?.pulangAt
+              ? "Sudah dijemput"
+              : absensiAnak
+              ? "Hadir"
+              : "Belum absen";
 
-      {jadwal.map((item, index) => {
-        const childId =
-          typeof item.childId === "object" ? item.childId._id : item.childId;
-        const absensiAnak = getAbsensiForChild(childId);
-
-        const denda = absensiAnak?.lateFee ?? null;
-        const statusBayar = absensiAnak?.dendaSudahDibayar
-          ? "Sudah dibayar"
-          : "Belum dibayar";
-        const statusJemput = absensiAnak?.pulangAt
-          ? "Status jemput: Sudah dijemput"
-          : "Status jemput: Belum dijemput";
-
-        return (
-          <div
-            key={index}
-            className="card mb-3"
-            style={{ width: "18rem", borderLeft: "4px solid #4CAF50" }}
-          >
-            <div className="card-body">
-              <h5 className="card-title">{item.childName}</h5>
-              <p className="card-text">
-                <strong>Jadwal Antar:</strong> {item.startTime} <br />
-                <strong>Jadwal Jemput:</strong> {item.endTime} <br />
-                <small className="text-muted">{item.paketName}</small>
-              </p>
-
-              {denda != null && (
-                <>
-                  <p className="text-danger fw-bold mt-2">
-                    Denda keterlambatan: Rp
-                    {Number(denda).toLocaleString("id-ID")} ({statusBayar})
-                  </p>
-
-                  {!absensiAnak?.dendaSudahDibayar && (
-                    <button
-                      className="btn btn-sm btn-warning"
-                      onClick={() => handleBayarDenda(absensiAnak._id)}
-                    >
-                      Bayar Denda
-                    </button>
-                  )}
-                </>
-              )}
-
-              <p className="text-primary fw-semibold mt-2">{statusJemput}</p>
-            </div>
-          </div>
-        );
-      })}
+            return (
+              <li
+                key={j._id}
+                className="border rounded p-4 shadow flex justify-between items-center"
+              >
+                <div>
+                  <p className="font-semibold">Nama: {j.child?.name}</p>
+                  <p>Paket: {j.paket?.name || "-"}</p>
+                </div>
+                <div className="text-sm text-gray-700">{status}</div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 };
