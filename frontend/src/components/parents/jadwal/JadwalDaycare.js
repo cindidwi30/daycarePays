@@ -12,17 +12,23 @@ const JadwalDaycareHariIni = () => {
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
       const [jadwalRes, absensiRes] = await Promise.all([
-        axios.get("/api/jadwal/hari-ini", config),
-        axios.get("/api/absensi", config),
+        axios.get(
+          "https://daycarepays-backend.up.railway.app/api/jadwal/hari-ini",
+          config
+        ),
+        axios.get(
+          "https://daycarepays-backend.up.railway.app/api/absensi",
+          config
+        ),
       ]);
 
-      console.log("✅ Jadwal:", jadwalRes.data);
       console.log("✅ Absensi:", absensiRes.data);
+      console.log("✅ Jadwal:", jadwalRes.data);
 
-      setJadwal(Array.isArray(jadwalRes.data) ? jadwalRes.data : []);
-      setAbsensi(Array.isArray(absensiRes.data) ? absensiRes.data : []);
+      setJadwal(jadwalRes.data);
+      setAbsensi(absensiRes.data);
     } catch (err) {
-      console.error(err);
+      console.error("❌ Gagal fetch data:", err);
       setError("Gagal memuat data");
     }
   };
