@@ -85,6 +85,7 @@ app.use("/api/absensi", absensiRoutes);
 app.use("/api/anak", anakRoutes);
 app.use("/api/pengasuh", pengasuhRoutes);
 app.use("/api/midtrans", midtransRoutes);
+app.use("/api/invoice", require("./routes/invoice"));
 
 // 404 Handler
 app.use((req, res, next) => {
