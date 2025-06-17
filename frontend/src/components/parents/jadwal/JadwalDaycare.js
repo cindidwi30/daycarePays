@@ -29,6 +29,9 @@ const JadwalDaycareHariIni = () => {
         }),
       ]);
 
+      console.log("✅ Jadwal:", jadwalRes.data);
+      console.log("✅ Absensi:", absensiRes.data);
+
       setJadwal(jadwalRes.data || []);
       setAbsensi(absensiRes.data || []);
     } catch (err) {
@@ -41,6 +44,7 @@ const JadwalDaycareHariIni = () => {
     fetchData();
   }, []);
 
+  // polling setiap 10 detik
   useEffect(() => {
     const interval = setInterval(() => {
       fetchData();
@@ -50,41 +54,26 @@ const JadwalDaycareHariIni = () => {
 
   const getAbsensiForChild = (childId) => {
     if (!childId) return null;
+
+    const idToCompare =
+      typeof childId === "object" && childId !== null ? childId._id : childId;
+
     return absensi.find((a) => {
       const absensiChildId =
-        typeof a.childId === "object" ? a.childId?._id : a.childId;
-      return absensiChildId?.toString() === childId?.toString();
+        typeof a.childId === "object" && a.childId !== null
+          ? a.childId._id
+          : a.childId;
+      return absensiChildId?.toString() === idToCompare?.toString();
     });
   };
 
-  const handleBayarDenda = async (absensiId) => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/denda/midtrans-token-denda`,
-        { absensiId },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const { redirect_url } = response.data;
-      window.location.href = redirect_url;
-    } catch (err) {
-      console.error("Gagal membuat transaksi denda:", err);
-      alert("Gagal membuat transaksi denda.");
-    }
-  };
-
-  const formatJam = (waktu) => {
-    return waktu
-      ? new Date(waktu).toLocaleTimeString("id-ID", {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : "-";
+  const formatWaktu = (isoString) => {
+    if (!isoString) return "-";
+    const date = new Date(isoString);
+    return date.toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   if (error) return <div className="text-danger">{error}</div>;
@@ -104,53 +93,34 @@ const JadwalDaycareHariIni = () => {
           typeof item.childId === "object" ? item.childId._id : item.childId;
         const absensiAnak = getAbsensiForChild(childId);
 
-        const denda = absensiAnak?.lateFee ?? null;
-        const statusBayar = absensiAnak?.dendaSudahDibayar
-          ? "Sudah dibayar"
-          : "Belum dibayar";
-
         return (
           <div
             key={index}
             className="card mb-3"
-            style={{ width: "18rem", borderLeft: "4px solid #4CAF50" }}
+            style={{ width: "100%", borderLeft: "4px solid #4CAF50" }}
           >
             <div className="card-body">
               <h5 className="card-title">{item.childName}</h5>
               <p className="card-text">
                 <strong>Jadwal Antar:</strong> {item.startTime} <br />
                 <strong>Jadwal Jemput:</strong> {item.endTime} <br />
-                <small className="text-muted">{item.paketName}</small>
+                <strong>Paket:</strong> {item.paketName || "-"}
               </p>
 
-              {absensiAnak && (
-                <div className="mb-2">
-                  <p>
-                    <strong>Jam Hadir:</strong> {formatJam(absensiAnak.hadirAt)}
-                  </p>
-                  <p>
-                    <strong>Jam Pulang:</strong>{" "}
-                    {formatJam(absensiAnak.pulangAt)}
-                  </p>
-                </div>
-              )}
-
-              {denda != null && (
+              {absensiAnak ? (
                 <>
-                  <p className="text-danger fw-bold">
-                    Denda keterlambatan: Rp
-                    {Number(denda).toLocaleString("id-ID")} ({statusBayar})
+                  <p className="text-success mb-1">
+                    Hadir pukul: {formatWaktu(absensiAnak.hadirAt)}
                   </p>
-
-                  {!absensiAnak?.dendaSudahDibayar && (
-                    <button
-                      className="btn btn-sm btn-warning"
-                      onClick={() => handleBayarDenda(absensiAnak._id)}
-                    >
-                      Bayar Denda
-                    </button>
-                  )}
+                  <p className="text-primary mb-1">
+                    Pulang pukul:{" "}
+                    {absensiAnak.pulangAt
+                      ? formatWaktu(absensiAnak.pulangAt)
+                      : "Belum dijemput"}
+                  </p>
                 </>
+              ) : (
+                <p className="text-danger">Belum absen hari ini.</p>
               )}
             </div>
           </div>
