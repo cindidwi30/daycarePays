@@ -79,26 +79,108 @@ router.get("/all", authenticateToken, async (req, res) => {
 });
 
 // Hapus anak berdasarkan ID (khusus admin)
+// router.delete("/:id", authenticateToken, async (req, res) => {
+//   const { id } = req.params;
+
+//   if (req.user.role !== "admin") {
+//     return res
+//       .status(403)
+//       .json({ error: "Hanya admin yang bisa menghapus anak." });
+//   }
+
+//   try {
+//     const deletedChild = await Child.findByIdAndDelete(id);
+
+//     if (!deletedChild) {
+//       return res.status(404).json({ error: "Anak tidak ditemukan." });
+//     }
+
+//     res.json({ message: "Anak berhasil dihapus." });
+//   } catch (err) {
+//     console.error("Gagal menghapus anak:", err);
+//     res.status(500).json({ error: "Terjadi kesalahan saat menghapus anak." });
+//   }
+// });
+
+// Hapus anak berdasarkan ID (admin bisa hapus semua, parent hanya anak miliknya)
 router.delete("/:id", authenticateToken, async (req, res) => {
   const { id } = req.params;
 
-  if (req.user.role !== "admin") {
-    return res
-      .status(403)
-      .json({ error: "Hanya admin yang bisa menghapus anak." });
-  }
-
   try {
-    const deletedChild = await Child.findByIdAndDelete(id);
+    const child = await Child.findById(id);
 
-    if (!deletedChild) {
+    if (!child) {
       return res.status(404).json({ error: "Anak tidak ditemukan." });
     }
 
+    // Admin bisa hapus semua, parent hanya bisa hapus anak miliknya
+    if (
+      req.user.role !== "admin" &&
+      child.parentId.toString() !== req.user.id
+    ) {
+      return res
+        .status(403)
+        .json({ error: "Kamu tidak diizinkan menghapus anak ini." });
+    }
+
+    await child.deleteOne();
     res.json({ message: "Anak berhasil dihapus." });
   } catch (err) {
     console.error("Gagal menghapus anak:", err);
     res.status(500).json({ error: "Terjadi kesalahan saat menghapus anak." });
+  }
+});
+
+// router.put("/:id", authenticateToken, async (req, res) => {
+//   const { id } = req.params;
+//   const updates = req.body;
+
+//   try {
+//     const updatedChild = await Child.findByIdAndUpdate(id, updates, {
+//       new: true,
+//     });
+
+//     if (!updatedChild) {
+//       return res.status(404).json({ error: "Data anak tidak ditemukan." });
+//     }
+
+//     res.json(updatedChild);
+//   } catch (err) {
+//     console.error("Gagal memperbarui anak:", err);
+//     res.status(500).json({ error: "Gagal memperbarui data anak." });
+//   }
+// });
+
+// Update data anak (admin bisa semua, parent hanya anak miliknya)
+router.put("/:id", authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const updates = req.body;
+
+  try {
+    const child = await Child.findById(id);
+
+    if (!child) {
+      return res.status(404).json({ error: "Data anak tidak ditemukan." });
+    }
+
+    // Admin bisa update semua, parent hanya bisa update anak miliknya
+    if (
+      req.user.role !== "admin" &&
+      child.parentId.toString() !== req.user.id
+    ) {
+      return res
+        .status(403)
+        .json({ error: "Kamu tidak diizinkan mengubah data anak ini." });
+    }
+
+    const updatedChild = await Child.findByIdAndUpdate(id, updates, {
+      new: true,
+    });
+
+    res.json(updatedChild);
+  } catch (err) {
+    console.error("Gagal memperbarui anak:", err);
+    res.status(500).json({ error: "Gagal memperbarui data anak." });
   }
 });
 
