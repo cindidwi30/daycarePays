@@ -211,7 +211,7 @@ const DaftarAnakDenganForm = () => {
                     {expandedId === anak._id ? "Sembunyikan Detail" : "Detail"}
                   </button>
                   <button
-                    className="btn btn-sm btn-warning"
+                    className="btn btn-sm btn-warning me-2"
                     onClick={() => {
                       setSelectedChild(anak);
                       setEditingChildId(anak._id);
