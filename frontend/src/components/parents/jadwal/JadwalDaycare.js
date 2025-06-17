@@ -29,9 +29,6 @@ const JadwalDaycareHariIni = () => {
         }),
       ]);
 
-      console.log("✅ Absensi:", absensiRes.data);
-      console.log("✅ Jadwal:", jadwalRes.data);
-
       setJadwal(jadwalRes.data || []);
       setAbsensi(absensiRes.data || []);
     } catch (err) {
@@ -55,7 +52,7 @@ const JadwalDaycareHariIni = () => {
     if (!childId) return null;
     return absensi.find((a) => {
       const absensiChildId =
-        typeof a.childId === "object" ? a.childId._id : a.childId;
+        typeof a.childId === "object" ? a.childId?._id : a.childId;
       return absensiChildId?.toString() === childId?.toString();
     });
   };
@@ -81,6 +78,15 @@ const JadwalDaycareHariIni = () => {
     }
   };
 
+  const formatJam = (waktu) => {
+    return waktu
+      ? new Date(waktu).toLocaleTimeString("id-ID", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "-";
+  };
+
   if (error) return <div className="text-danger">{error}</div>;
   if (!jadwal || jadwal.length === 0)
     return <div>Tidak ada jadwal daycare hari ini.</div>;
@@ -102,9 +108,6 @@ const JadwalDaycareHariIni = () => {
         const statusBayar = absensiAnak?.dendaSudahDibayar
           ? "Sudah dibayar"
           : "Belum dibayar";
-        const statusJemput = absensiAnak?.pulangAt
-          ? "Status jemput: Sudah dijemput"
-          : "Status jemput: Belum dijemput";
 
         return (
           <div
@@ -120,12 +123,21 @@ const JadwalDaycareHariIni = () => {
                 <small className="text-muted">{item.paketName}</small>
               </p>
 
+              {absensiAnak && (
+                <div className="mb-2">
+                  <p>
+                    <strong>Jam Hadir:</strong> {formatJam(absensiAnak.hadirAt)}
+                  </p>
+                  <p>
+                    <strong>Jam Pulang:</strong>{" "}
+                    {formatJam(absensiAnak.pulangAt)}
+                  </p>
+                </div>
+              )}
+
               {denda != null && (
                 <>
-                  <p
-                    className="text-danger fw-bold"
-                    style={{ marginTop: "10px" }}
-                  >
+                  <p className="text-danger fw-bold">
                     Denda keterlambatan: Rp
                     {Number(denda).toLocaleString("id-ID")} ({statusBayar})
                   </p>
@@ -140,8 +152,6 @@ const JadwalDaycareHariIni = () => {
                   )}
                 </>
               )}
-
-              <p className="text-primary fw-semibold">{statusJemput}</p>
             </div>
           </div>
         );
