@@ -16,11 +16,11 @@ const JadwalDaycareHariIni = () => {
         axios.get("/api/absensi", config),
       ]);
 
-      console.log("✅ Absensi:", absensiRes.data);
       console.log("✅ Jadwal:", jadwalRes.data);
+      console.log("✅ Absensi:", absensiRes.data);
 
-      setJadwal(jadwalRes.data);
-      setAbsensi(absensiRes.data);
+      setJadwal(Array.isArray(jadwalRes.data) ? jadwalRes.data : []);
+      setAbsensi(Array.isArray(absensiRes.data) ? absensiRes.data : []);
     } catch (err) {
       console.error(err);
       setError("Gagal memuat data");
@@ -51,7 +51,10 @@ const JadwalDaycareHariIni = () => {
       ) : (
         <ul className="space-y-4">
           {jadwal.map((j) => {
-            const absensiAnak = getAbsensiForChild(j.childId);
+            const childId =
+              typeof j.child === "object" ? j.child._id : j.childId;
+            const absensiAnak = getAbsensiForChild(childId);
+
             const status = absensiAnak?.pulangAt
               ? "Sudah dijemput"
               : absensiAnak
@@ -64,7 +67,7 @@ const JadwalDaycareHariIni = () => {
                 className="border rounded p-4 shadow flex justify-between items-center"
               >
                 <div>
-                  <p className="font-semibold">Nama: {j.child?.name}</p>
+                  <p className="font-semibold">Nama: {j.child?.name || "-"}</p>
                   <p>Paket: {j.paket?.name || "-"}</p>
                 </div>
                 <div className="text-sm text-gray-700">{status}</div>
